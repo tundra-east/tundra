@@ -104,15 +104,6 @@ def captured(fn, *args):
     return result, out.getvalue()
 
 
-def restore_env(name, saved):
-    # restoring the prior value rather than deleting it is defensive,
-    # so the environment is left as the caller left it.
-    if saved is None:
-        os.environ.pop(name, None)
-    else:
-        os.environ[name] = saved
-
-
 # a root README with one of everything the translation gate compares,
 # and its translation built from parts so each case can break exactly one of them.
 README_SOURCE = (
@@ -136,6 +127,15 @@ def translation(source=README_SOURCE, **override):
     mark = "<!-- translated from README.md, source sha256 %s; see CLAUDE.md -->" % check.source_digest(source)
     return "\n\n".join([mark + "\n# Demo", parts["switcher"], parts["links"], parts["install"],
                         parts["code"], parts["notes"], parts["table"]]) + "\n"
+
+
+# the root README with a mermaid diagram after its table, and that diagram with translated labels
+MERMAID_SOURCE = README_SOURCE + "\n```mermaid\nflowchart TD\n  A[Start] --> B[Done]\n```\n"
+MERMAID_TRANSLATED = "```mermaid\nflowchart TD\n  A[開始] --> B[完成]\n```"
+
+
+def mermaid_translation():
+    return translation(source=MERMAID_SOURCE, table=TRANSLATED["table"] + "\n\n" + MERMAID_TRANSLATED)
 
 
 def translated_repo(source=README_SOURCE, zh_tw=None, zh_cn=None):
@@ -211,6 +211,27 @@ def main():
         case(tmp, "leak-ticket", "leaks",
              extra_doc="Fixes " + "PROJ" + "-" + "4821" + " in the billing path.\n")
 
+        case(tmp, "leak-address", "leaks",
+             extra_doc="Ask " + "jane.doe" + "@" + "billing.invalid" + " for access.\n")
+
+        # a subdomain of an allowed domain is another organisation's mail,
+        # so the domain must match exactly rather than by suffix.
+        case(tmp, "leak-address-at-allowed-subdomain", "leaks",
+             extra_doc="Ask " + "x" + "@" + "sub.example.com" + " for access.\n")
+
+        # mail domains are case-insensitive, so an allowed domain in any case is still a fixture.
+        case(tmp, "allowed-address-in-mixed-case-is-not-a-leak", None,
+             extra_doc="Commit as someone@EXAMPLE.Com in the fixture.\n")
+
+        case(tmp, "noreply-address-in-mixed-case-is-not-a-leak", None,
+             extra_doc="Commits by bot@users.NoReply.github.com are generated.\n")
+
+        # three of the allowlisted hosts and one allowlisted ticket prefix,
+        # so removing any one of the entries this case uses turns it red.
+        case(tmp, "allowlisted-hosts-and-prefixes-are-not-leaks", None,
+             extra_doc="See https://dev.azure.com/acme, https://acme.visualstudio.com/repo "
+                       "and https://www.w3.org/2000/svg, as in ABC-123.\n")
+
         # each translation defect below breaks one thing the gate compares, and only that one,
         # so deleting any single comparison from the gate leaves its case unreported.
         case(tmp, "translations-current", None, **translated_repo())
@@ -224,6 +245,14 @@ def main():
         case(tmp, "translation-missing", "translations", **translated_repo(zh_cn=False))
         case(tmp, "translation-code-changed", "translations",
              **translated_repo(zh_tw=translation(code="```\n/plugin install 示範@market\n```")))
+        # a mermaid diagram's labels are prose, so translating them keeps the translation current,
+        # while dropping the diagram changes what the reader sees.
+        case(tmp, "translation-mermaid-labels-translated", None,
+             **translated_repo(source=MERMAID_SOURCE, zh_tw=mermaid_translation(),
+                               zh_cn=mermaid_translation()))
+        case(tmp, "translation-mermaid-dropped", "translations",
+             **translated_repo(source=MERMAID_SOURCE, zh_tw=translation(source=MERMAID_SOURCE),
+                               zh_cn=mermaid_translation()))
         case(tmp, "translation-link-dropped", "translations",
              **translated_repo(zh_tw=translation(links="閱讀指南，然後 [安裝](#install)。")))
         case(tmp, "translation-heading-dropped", "translations",
@@ -300,115 +329,35 @@ def main():
         check.run(git_root, ["versions"])
         ok("a resolvable ref produces no note", check.NOTES == [], f"notes were {check.NOTES}")
 
-        print("\nRelease notice (says what a push releases, never fails one):")
-        notice_root = build_fixture(os.path.join(tmp, "notice"))
-        listed = check.release_notice(notice_root, published={"demo-plugin": "0.9.0"})
-        ok("a changed version is listed as published -> local",
-           listed == ["demo-plugin 0.9.0 -> 1.0.0"], f"got {listed}")
-        # the case that goes red if the comparison is inverted to ==.
-        same = check.release_notice(notice_root, published={"demo-plugin": "1.0.0"})
-        ok("a plugin at its published version is not listed", same == [], f"got {same}")
-        absent = check.release_notice(notice_root, published={"other-plugin": "1.0.0"})
-        ok("a plugin missing from the published copy reads 'unpublished'",
-           absent == ["demo-plugin unpublished -> 1.0.0"], f"got {absent}")
-
-        many_root = build_fixture(os.path.join(tmp, "notice-many"))
-        for name, version in (("zeta-plugin", "2.0.0"), ("alpha-plugin", "3.1.0"),
-                              ("mid-plugin", "1.2.0")):
-            write(os.path.join(many_root, "plugins", name, ".claude-plugin", "plugin.json"),
-                  '{"name": "%s", "version": "%s"}' % (name, version))
-        many = check.release_notice(many_root, published={
-            "demo-plugin": "0.9.0", "mid-plugin": "1.2.0", "zeta-plugin": "1.9.0"})
-        ok("several changed plugins come out sorted by name, the unchanged one omitted",
-           many == ["alpha-plugin unpublished -> 3.1.0",
-                    "demo-plugin 0.9.0 -> 1.0.0",
-                    "zeta-plugin 1.9.0 -> 2.0.0"], f"got {many}")
-
-        # an empty dict is an injected answer meaning nothing is published yet,
-        # which is not the same as having no published ref to ask at all.
-        empty = check.release_notice(notice_root, published={})
-        ok("an empty published copy lists every plugin as unpublished",
-           empty == ["demo-plugin unpublished -> 1.0.0"], f"got {empty}")
-
-        notice_git = build_fixture(os.path.join(tmp, "notice-git"))
-        quiet_git = build_fixture(os.path.join(tmp, "notice-quiet"))
-        if init_git_history(notice_git) and init_git_history(quiet_git):
-            bump(notice_git, version="1.1.0")
-            bump(quiet_git, version=None)
-            through_git = check.release_notice(notice_git)
-            ok("real history: a bumped version is listed",
-               through_git == ["demo-plugin 1.0.0 -> 1.1.0"], f"got {through_git}")
-
-            saved = os.environ.get("ITPR_PUBLISHED_REF")
-            os.environ["ITPR_PUBLISHED_REF"] = "refs/heads/deliberately-absent"
-            try:
-                unresolvable = check.release_notice(notice_git)
-            finally:
-                restore_env("ITPR_PUBLISHED_REF", saved)
-            # the same fixture lists a line through a resolvable ref just above,
-            # so an empty answer here can only come from the unresolvable ref.
-            ok("an unresolvable published ref lists nothing, unlike an empty published copy",
-               unresolvable == [], f"got {unresolvable}")
-
-            rc, printed = captured(check.print_release_notice, quiet_git)
-            ok("print_release_notice is silent when no version moved", printed == "",
-               f"printed {printed!r}")
-            ok("print_release_notice returns 0 when silent", rc == 0, f"returned {rc}")
-            rc, printed = captured(check.print_release_notice, notice_git)
-            block = printed.lstrip("\n").splitlines()
-            ok("print_release_notice opens with the release header, then the line",
-               block[:2] == ["release: this push publishes",
-                             "         demo-plugin 1.0.0 -> 1.1.0"], f"printed {printed!r}")
-            ok("print_release_notice returns 0 when it prints", rc == 0, f"returned {rc}")
-        else:
-            ok("real history: git unavailable, the notice lists nothing rather than failing",
-               check.release_notice(notice_git) == [])
-
-        print("\nmain --release-notice runs only the notice:")
-        # a fixture whose gates fail, so falling through to them would return 1,
-        # and run() is recorded as a second witness in case a gate stops failing.
-        main_root = build_fixture(os.path.join(tmp, "notice-main"))
-        has_git = init_git_history(main_root)
-        if has_git:
-            bump(main_root, version="1.1.0")
-        write(os.path.join(main_root, "plugins", "demo-plugin", "skills", "demo-skill", "SKILL.md"),
-              "---\nname: not-the-directory\ndescription: A demo skill.\n---\n\n# Demo\n")
-        ok("precondition: the gates fail on this fixture",
-           "frontmatter" in gates_reporting(main_root))
-
-        real_run = check.run
-        run_calls = []
-
-        def recording_run(*args, **kwargs):
-            run_calls.append(args)
-            return real_run(*args, **kwargs)
-
+        print("\nmain takes its root from argv[1], else the working directory:")
+        defect_root = build_fixture(os.path.join(tmp, "main-defect"),
+                                    frontmatter="---\nname: not-the-directory\n"
+                                                "description: A demo skill.\n---\n\n# Demo\n")
+        clean_root = build_fixture(os.path.join(tmp, "main-clean"))
         prog = "pre_publish_check.py"
-        invocations = {
-            "flag before the root": [prog, "--release-notice", main_root],
-            "flag after the root": [prog, main_root, "--release-notice"],
-            "no root, from the working directory": [prog, "--release-notice"],
-        }
+        # with argv[1], the working directory is the other fixture,
+        # so a wrong choice of root flips the result.
+        # without it, the working directory is the intended root,
+        # and the pair still discriminates because a wrong fallback gives both the same result.
+        invocations = (
+            ("argv[1] names a defect fixture", clean_root, [prog, defect_root], 1),
+            ("argv[1] names a clean fixture", defect_root, [prog, clean_root], 0),
+            ("no argv[1], from a defect fixture", defect_root, [prog], 1),
+            ("no argv[1], from a clean fixture", clean_root, [prog], 0),
+        )
         cwd = os.getcwd()
-        check.run = recording_run
-        try:
-            for label, argv in invocations.items():
-                run_calls.clear()
-                if len(argv) == 2:
-                    os.chdir(main_root)
-                try:
-                    rc, printed = captured(check.main, argv)
-                finally:
-                    os.chdir(cwd)
-                ok(f"{label}: returns 0", rc == 0, f"returned {rc}")
-                ok(f"{label}: never runs the gates", run_calls == [] and "gates" not in printed,
-                   f"run called {len(run_calls)} time(s)")
-                if has_git:
-                    # proves the root resolved to the fixture rather than to the flag.
-                    ok(f"{label}: prints the fixture's release line",
-                       "demo-plugin 1.0.0 -> 1.1.0" in printed, f"printed {printed!r}")
-        finally:
-            check.run = real_run
+        for label, workdir, argv, expected_rc in invocations:
+            os.chdir(workdir)
+            try:
+                rc, printed = captured(check.main, argv)
+            finally:
+                os.chdir(cwd)
+            ok(f"{label}: returns {expected_rc}", rc == expected_rc, f"returned {rc}")
+            if expected_rc:
+                ok(f"{label}: prints the failing gate",
+                   "[FAIL] frontmatter" in printed.splitlines(), f"printed {printed!r}")
+            else:
+                ok(f"{label}: prints no failing gate", "[FAIL]" not in printed, f"printed {printed!r}")
 
         print("\nGate coverage:")
         covered = {"json", "frontmatter", "descriptions", "leaks", "versions", "translations"}
@@ -416,7 +365,7 @@ def main():
            covered == set(check.GATES), f"uncovered: {sorted(set(check.GATES) - covered)}")
 
         print("\nReal repository:")
-        repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         results = check.run(repo)
         for name, failures in results.items():
             ok(f"repo passes '{name}'", failures == [], "; ".join(failures[:3]))

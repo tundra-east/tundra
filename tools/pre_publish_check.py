@@ -257,8 +257,7 @@ def check_leaks(root):
         for host in set(HOST_RE.findall(text)):
             if host in ALLOWED_HOSTS or PLACEHOLDER_HOST.match(host):
                 continue
-            if True:
-                failures.append(f"{rel}: references host '{host}', which is not on the allowlist")
+            failures.append(f"{rel}: references host '{host}', which is not on the allowlist")
         for prefix, digits in set(TICKET_RE.findall(text)):
             if prefix.lower() not in ALLOWED_TICKET_PREFIXES:
                 failures.append(f"{rel}: carries ticket-shaped token '{prefix}-{digits}'")
@@ -267,8 +266,7 @@ def check_leaks(root):
                 continue
             if address.rsplit("@", 1)[1].lower() in ALLOWED_EMAIL_DOMAINS:
                 continue
-            if True:
-                failures.append(f"{rel}: carries the address '{address}'")
+            failures.append(f"{rel}: carries the address '{address}'")
     return failures
 
 
