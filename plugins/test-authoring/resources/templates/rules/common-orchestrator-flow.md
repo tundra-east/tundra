@@ -1,0 +1,183 @@
+---
+description: Shared reference for per-type orchestrator skills (add-*-test, update-*-test). Covers scope resolution, verifier spawn, structured-output enforcement, fix protocol, spec-vs-impl divergence routing, and summary reporting patterns that every orchestrator follows identically.
+---
+
+# Common Orchestrator Flow
+
+> **Consumers** — the `add-unit-test` / `add-integration-test` and `update-unit-test` / `update-integration-test` skills, plus `scan-test-gaps` (which delegates to the same writers). Each per-type skill references this file and adds its flow-specific steps (pre-fetch, delegation, audit, execute, etc.) inline.
+>
+> Keep this file minimal — if a pattern is not truly universal across all orchestrators, it belongs in the per-type file.
+
+## Role boundary (CRITICAL)
+
+The orchestrator delegates ALL file edits to writer agents — for first-pass writes, fix invocations (deterministic findings or user-approved quality flags), and update-flow Phase 2 execute. The orchestrator MUST NOT invoke `Write`, `Edit`, or `MultiEdit` on test files under any circumstances, including:
+
+- when a fix looks "small" or "obvious"
+- when the user has already approved the change
+- when a writer agent appears unavailable or a previous writer's lifecycle has ended
+
+Every writer invocation — first pass, fix round, or Phase 2 execute — goes through the `Agent` tool with a fresh subagent spawn. There is no "continue the previous writer" path; the orchestrator does not relay between phases — every phase passes its own complete context inline in the `Agent` prompt. See `fix-protocol.md` for the `fix_invocation` block and `common-update-instructions.md` for the `phase: execute` block.
+
+If the orchestrator cannot route a fix (e.g. it lacks a required tool or input), follow the "On circuit break" steps in `fix-protocol.md` — mark the affected items 🟥 and report to the user. Do NOT apply the change directly.
+
+## Context discipline (lazy loading)
+
+The orchestrator runs in the main conversation context — every file it reads stays there for the whole session. So it reads **only orchestrator-facing documents, at the step that uses them** — never the full rule set upfront. Writer/verifier rule books are the subagents' own reading: each subagent loads them in its own isolated context per its Path-resolution preamble, so an orchestrator preload duplicates them at main-context prices and buys nothing.
+
+Which files the orchestrator reads, and at which step, is flow-specific: each per-type skill declares it in its own "Orchestrator reading list" (Step -1). This file states only the principle — do not add per-skill file/step data here (see "What stays in per-type orchestrators").
+
+## Scope resolution
+
+Follow the procedure in `../shared/scope-resolution.md`.
+
+- **Mode A** (no argument): Use git diff. Each per-type skill may add a `MODE_A_FOCUS` note describing what source changes are relevant for that test type (e.g., unit focuses on new public methods, integration on modified endpoints and consumers).
+- **Mode B** (argument provided): Resolve by directory, component, class, method/endpoint, or file name.
+
+## Pre-fetch context (add-flow only)
+
+Before spawning writer agents, pre-fetch sibling context to reduce agent exploration time:
+
+1. For each source file, find the corresponding test directory: from the sibling tests that mirror it, and from the directory structure in `.claude/conventions/tests/project-architecture.md` when a prior setup cached it.
+2. If sibling test files exist, read them and extract the **convention spec** — one line per dimension, values taken from the sibling itself. The dimensions: test framework and attributes, mocking library and approach, assertion library and style, fixture/setup pattern, test and file naming, AAA comment usage, and how the SUT is constructed.
+
+   That list is inlined here on purpose. The authoritative copy lives in `common-writer-instructions.md` → "Style rules (inherit from sibling)", which is the **writer's** rule book and sits on your Step -1 **Never** list — you must not open it, so it cannot define anything you are required to produce. Duplication is the cheaper error here: seven words against loading a whole rule book into the main context. Your spec is an acceleration hint anyway — the writer re-derives it against its own copy and the sibling wins on any disagreement, so the two drifting apart degrades a hint, not a rule.
+3. Pass this context to the writer so it does NOT need to discover conventions itself.
+
+## Writer delegation
+
+> **Plugin handoff (every spawn, always).** The orchestrator passes `plugin_resources_path` (the absolute path of the plugin's `resources/templates` directory, resolved in Step -1 — the directory that *contains* `rules/` and `shared/`, not the `resources/` directory above it) and `build_test_command` (session-detected; `--filter` adjusted per test class) into **every** subagent prompt — writer, verifier, and the audit / execute phases of update flows. Neither is optional: a subagent cannot resolve the plugin path itself, and the rule books it must obey live only there. The single exception is Step -1's **degraded mode** — when the plugin path could not be resolved at all, pass a `fallback_rules` block carrying the non-negotiable core inline, in place of `plugin_resources_path`, and say so in your visible output. It reads rules/shared from the passed path per its own Path-resolution preamble, and treats convention docs as optional (sibling-first).
+
+Use the **Agent tool** to spawn the matching per-type writer:
+
+- `add-unit-test` → spawns `test-authoring:add-unit-test-agent`
+- `add-integration-test` → spawns `test-authoring:add-integration-test-agent`
+- `update-unit-test` → spawns `test-authoring:update-unit-test-agent`
+- `update-integration-test` → spawns `test-authoring:update-integration-test-agent`
+
+**Add-flow concurrency**: spawn **one agent per source class**, all in parallel. Methods / endpoints of the same class stay in a single agent.
+
+**Update-flow**: one agent per source class for the audit phase (parallel); the execute phase is a **separate fresh-spawn** with a `phase: execute` block (see `common-update-instructions.md`) — not a continuation of the audit-phase agent.
+
+**Fix rounds**: when a verifier flags issues, the orchestrator spawns a **fresh writer** with a `fix_invocation` block per `fix-protocol.md`. Every fix round is a new `Agent` invocation, not a continuation of any previous writer instance.
+
+**Pre-writer source snapshot**: before spawning the first writer, record the current source state: `git diff --` pathspec'd to the repo's **source directories** — the roots themselves (`src/`, `lib/`, …), not the narrower scope Step 1 resolved inside them, and not the test tree. A writer editing a source file *outside* its scope is exactly what this baseline exists to catch, so scoping the snapshot to the files under review would blind it; including the test tree would instead flag the writer's own legitimate test edits. **Pass the pathspec you used alongside the diff**, as `source_pathspec`: the verifier re-runs the comparison and must cover exactly the same set, and "the source directories" is a description two readers can resolve differently — in a layout like `src/Foo/` beside `src/Foo.Tests/`, one side excluding the test project and the other not turns every legitimate test edit into a U3 finding. The verifier needs the baseline because in Mode A the user's own uncommitted source changes are expected, and without it the verifier cannot tell them apart from writer tampering.
+
+## Structured-output enforcement
+
+Writer, audit, and verifier subagents are contracted to return a structured payload as the first content of their final message (see the "Output discipline" notes in `common-writer-instructions.md` and `common-verifier-checks.md`). The orchestrator depends on parsing that payload — it cannot proceed on a prose-only response.
+
+When a subagent returns a **prose-first response, a payload buried in narrative, an acknowledgement that omits the structured record** ("audit complete, see above"), **or a well-formed payload that omits a field the next spawn's template requires**, do NOT attempt to parse the prose or fill the gap yourself. Respawn that subagent **once** with the same inputs plus an explicit reminder: "return the structured payload as the first content; no prose preamble; verbatim even if this prompt already lists the answer." If the second attempt is still malformed, report it to the user as an unresolved subagent-contract failure rather than guessing at the missing fields.
+
+This guards against the observed degradation where a subagent, seeing the answer already in its prompt, shrinks to a bare acknowledgement and starves the orchestrator of the record it must render.
+
+## Writer stop on missing framework source
+
+A writer that hits the "Runtime resolution flow" in `sut-analysis.md` cannot wait for user input:
+it returns its structured output early with `stop_reason: missing_framework_source`, naming the missing
+package and the attempted path in `issues:`, and no tests written for the affected scope.
+When a writer output contains such an entry, do NOT proceed to the build check or verifier for that writer's scope. Instead:
+
+1. Present the options from `sut-analysis.md` to the user:
+   **Option A** — provide the correct local source path; **Option B** — proceed without local source, inferring behaviour.
+   When the writer reported `registry-only — no local path to try`, **drop Option A**: step 1 already established
+   the package resolves only into the package cache, so asking for a path wastes the user's turn.
+2. **Fresh re-spawn the writer** with its original inputs plus the user's choice in the prompt —
+   there is no resume of the stopped instance.
+3. If the user declines both options, mark the affected scope 🟥 unresolved in the summary.
+
+This stop is a protocol step, not a failure — it does not count toward any fix circuit breaker.
+
+## Subagent stop on missing plugin context
+
+Any subagent — writer, verifier, or an update flow's audit / execute phase — returns
+`stop_reason: missing_plugin_context` when you passed **neither** `plugin_resources_path` **nor**
+`fallback_rules` in that spawn. A degraded-mode spawn carrying `fallback_rules` does not stop; it
+proceeds on the inline core and flags the reduced guardrails in its `issues:`.
+It is **your** bug, not the repo's, and re-spawning the same prompt reproduces it exactly — so do not
+treat it as a malformed-output case (the Structured-output enforcement rule above does not apply: the
+payload is well-formed, it just reports a stop) and do not count it toward any circuit breaker. Fix the
+spawn: add `plugin_resources_path` (and `build_test_command`) per **Plugin handoff** above, then spawn
+once more. If the second spawn stops the same way, report to the user that this skill cannot hand its
+subagents the plugin path, and stop — never fall back to running a subagent without its rule books,
+and never accept a verifier verdict that was produced without them.
+
+## Writer stop on no convention source
+
+A writer that finds neither a sibling test nor a convention file
+(`test-writer-rules.md` → Fallback Chain) also returns early, with
+`stop_reason: no_convention_source`: no tests written, `build_status: not_run`, and an
+`issues:` entry naming the directories it searched.
+This is the expected outcome for a brand-new test project, not a failure — the plugin
+deliberately does not author the first test of a project from a language default.
+
+When a writer output contains such an entry, do NOT proceed to the build check or verifier
+for that writer's scope, and do NOT count it toward any fix circuit breaker. Instead:
+
+1. Report it to the user plainly: which scope has no conventions to learn from, and what was searched.
+2. Offer the two ways forward — **Option A**: point the skill at an existing test elsewhere in the
+   repo to use as the pattern, and re-invoke; **Option B**: write the first test by hand, after which
+   every later run has a sibling to follow.
+3. **Fresh re-spawn** only if the user takes Option A; there is no resume of the stopped instance.
+4. Mark the affected scope 🟥 unresolved in the summary if the user takes neither.
+
+When several writers in one run stop this way — the normal case for a batch caller like `scan-test-gaps`
+against a repo with no tests — **merge them into a single question** listing every affected scope, not one
+prompt per writer.
+
+## Multi-agent build check
+
+If **multiple writer agents** were spawned, run a final build after all complete to catch cross-file issues, following the fix rules in `test-rules.md`. Use the `build_test_command` **you** detected in Step -1 — `test-rules.md`'s Build and Test Verification section is addressed to a subagent whose caller passed it one, and you are that caller. Skip when a single agent was spawned — the agent verifies its own build.
+
+If the final build fails, treat each error as a deterministic finding: attribute it to the writer whose files it points at and route it via the `fix_invocation` protocol in `fix-protocol.md` (counting toward that lineage's circuit breaker) before spawning the verifier. Errors that cannot be attributed to any writer's files are reported to the user as 🟥 unresolved — never fixed by the orchestrator directly.
+
+## Verifier spawn
+
+After all writers complete (and build succeeds), spawn **one** per-type verifier:
+
+- Add-flow → `test-authoring:verify-add-<type>-test-agent` (e.g., `test-authoring:verify-add-unit-test-agent`)
+- Update-flow → `test-authoring:verify-update-<type>-test-agent` (plus a parallel `test-authoring:verify-add-<type>-test-agent` if any add actions were executed in Step 5b)
+
+Pass all writer outputs to the verifier in a single prompt, **plus the original task / spec description** (required for the U2b divergence cross-check) **and the pre-writer source snapshot** (recorded at writer-delegation time; the baseline for the U3 SUT-modification check) — neither is part of any writer's output. **Always spawn the verifier**, even if only a single writer ran — quality control must not be bypassed.
+
+## Fix-verify loop
+
+Follow the **Verifier Fix Protocol** in `fix-protocol.md`:
+
+- **Deterministic** findings → fresh-spawn the writer with a `fix_invocation` block, with circuit breaker (limits per `fix-protocol.md` — the single source of truth for the counters; on circuit break report as 🟥 unresolved).
+- **Non-deterministic** findings → present to the user. If the user approves a quality-flag fix or anti-gaming remediation, route the approved instruction via the same fresh-spawn `fix_invocation` block with the `user_approved_actions` field populated. The orchestrator never applies the change itself — see "Role boundary" above.
+
+  **`spec_vs_impl_divergence` findings** (writer or verifier reported the SUT contradicts the task spec — see `common-verifier-checks.md` → "U2b") are non-deterministic: present each to the user verbatim and ask whether the SUT is buggy (the user fixes source, then re-run the relevant flow) or the spec is stale (accept the test against observed behaviour). Never auto-fix a divergence and never silently drop it from the summary — surfacing it is the whole point.
+
+After each fix round, spawn a **fresh** verifier instance (do NOT reuse the previous one — independence is a quality-control requirement).
+
+Update-flow exception: deletion-related verifier findings (violations in `deletion_justification`, `valid_test_protection`, or `anti_deletion_check`) bypass the circuit-breaker loop and go directly to the user with a rollback offer — per the Routing section of the `verify-update-<type>-test-agent` definitions.
+
+## Summary reporting
+
+Collect results from writers and verifiers and present a brief summary:
+
+- Which source files were analysed
+- Which sibling tests were referenced (and what style was adopted)
+- Which test files were created / modified / deleted
+- How many test methods were added / updated / deleted
+- Convention violations found and fixes applied by the writer (if any)
+- Anti-gaming violations found (if any) — present to user
+- 🟪 Quality flags raised by the verifier (if any) — present these for the user to judge
+- Any areas that could not be covered and why
+
+### Status per file
+
+For each test file, report a status using the icons defined in `<PLUGIN_TEMPLATES>/../static/status-legend.md` (plugin-internal controlled vocabulary — never written per-repo).
+
+## Env_failure handling (integration-like orchestrators)
+
+Integration-like orchestrators must distinguish between **test logic failure** (deterministic, route to writer) and **environment failure** (container runtime, Docker unavailable, port conflict, image pull — non-deterministic, report to user without retrying). `test-rules.md` requires the distinction be reported; the signals are catalogued in `common-writer-instructions.md` → "Env_failure handling".
+
+## What stays in per-type orchestrators
+
+Each per-type skill file still owns its flow-specific content:
+
+- Add-flow: pre-fetch step, delegate step, verify step, summary
+- Update-flow: audit step, present-summary step, prepare-rollback step, execute step, verify step, rollback-on-failure step (actions derive from audit status — there is no confirm step)
+
+Do not lift flow-specific content here — it breaks the "common = universally shared" contract.

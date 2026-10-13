@@ -1,0 +1,88 @@
+name: checks
+
+# This repository publishes by direct push to main, so this workflow is a
+# detector rather than a gate -- it reports after the push has already landed.
+# The pre-push hook in .githooks is what can actually stop a bad push --
+# see tools/README.md.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # The publish gates. Platform- and version-independent, so they run once.
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # the version gate compares this commit against the previously
+          # published one, so it needs more than a shallow checkout
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Resolve the ref the version gate compares against
+        id: published
+        # Only a push needs this. pre_publish_check.py defaults to origin/main, which
+        # right locally and on a pull request, but on a push to main that ref
+        # already points at the commit being pushed, so the comparison would
+        # report nothing changed. The push's own before-SHA is the state
+        # consumers actually had. HEAD~1 is NOT a substitute: a push carrying
+        # several commits would then hide any plugin changed in all but the
+        # last of them, which is the exact case this gate exists to catch.
+        if: github.event_name == 'push'
+        run: |
+          before='${{ github.event.before }}'
+          # a new branch or a force-push reports an all-zero or unreachable SHA
+          if [ -z "$before" ] || ! git rev-parse --verify --quiet "$before^{commit}" >/dev/null; then
+            echo "before-SHA '$before' is unusable, falling back to HEAD~1" >&2
+            before=HEAD~1
+          fi
+          echo "ref=$before" >> "$GITHUB_OUTPUT"
+
+      - name: Run the gates against this commit
+        env:
+          # empty on a pull request, where pre_publish_check.py's own origin/main default is
+          # already correct. a gate that cannot resolve its ref says so rather
+          # than passing quietly.
+          ITPR_PUBLISHED_REF: ${{ steps.published.outputs.ref }}
+        run: python tools/pre_publish_check.py
+
+  # The test suites, including the dashboard's -- which is the only Python this
+  # repository actually ships to consumers, and which nothing ran automatically
+  # before. Every observed consumer run has been Windows on 3.13, while CI had
+  # only ever been Linux on whatever '3.x' resolved to, so both axes are real.
+  selfchecks:
+    strategy:
+      # a Windows failure must not hide whether Linux failed too, because that
+      # difference is what separates a platform defect from a real one
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        # a pinned cell backs a claim in the READMEs, a floating one backs
+        # nothing. 3.13 is the floor -- the version every observed run used --
+        # and 3.14 is the ceiling, pinned so the claim cannot go stale the day
+        # '3.x' moves on. '3.x' itself is only the early warning for the next
+        # release, and must never be what a documented version rests on.
+        python: ['3.13', '3.14', '3.x']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Report the interpreter actually resolved
+        # the claim in the READMEs is only as good as what ran, so record it
+        run: python -c "import sys; print(sys.version)"
+
+      # discovered by glob rather than listed here: a list is a thing to forget,
+      # and a suite this file did not name ran nowhere until somebody noticed
+      - name: Run the test suites
+        run: python tools/run_tests.py

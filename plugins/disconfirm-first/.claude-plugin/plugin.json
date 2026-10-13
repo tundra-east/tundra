@@ -1,0 +1,12 @@
+{
+  "name": "disconfirm-first",
+  "description": "Adversarial review skills: review-issue-fact (issue), review-plan-risk (design), review-code-risk (implementation)",
+  "version": "1.7.3",
+  "repository": "https://github.com/tundra-east/issue-to-pr",
+  "homepage": "https://github.com/tundra-east/issue-to-pr#disconfirm-first",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "tundra-east",
+    "url": "https://github.com/tundra-east"
+  }
+}
