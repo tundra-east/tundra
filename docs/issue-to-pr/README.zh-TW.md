@@ -1,13 +1,13 @@
-<!-- translated from README.md, source sha256 07c526e69f72e4c41e40eaad7d74a011557e7888003eb2c32427bc832a8ca93f; see CLAUDE.md "Translations of the root README" before editing -->
+<!-- translated from README.md, source sha256 f7a146173e296ba3cbc2e451204d47776cb524e0bf3db55d4ddde530557306f8; see CLAUDE.md "Translations of the root README" before editing -->
 # issue-to-pr
 
-![resolve-issue-dashboard 正在顯示一次執行到一半的 pipeline](docs/resolve-issue-dashboard.png)
+![resolve-issue-dashboard 正在顯示一次執行到一半的 pipeline](resolve-issue-dashboard.png)
 
 <sub>`issue-to-pr-pipeline` 裡的 `resolve-issue-dashboard` 正在追蹤一次執行在 pipeline 中的進度（示意用的範例資料）。</sub>
 
 <div align="center">
 
-[![CI](https://img.shields.io/github/actions/workflow/status/tundra-east/issue-to-pr/checks.yml?branch=main&label=CI)](https://github.com/tundra-east/issue-to-pr/actions/workflows/checks.yml) [![Claude Code](https://img.shields.io/badge/Claude%20Code-2.1.143%2B-blue)](#install) [![License: Apache-2.0](https://img.shields.io/github/license/tundra-east/issue-to-pr)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/tundra-east/tundra/checks.yml?branch=main&label=CI)](https://github.com/tundra-east/tundra/actions/workflows/checks.yml) [![Claude Code](https://img.shields.io/badge/Claude%20Code-2.1.143%2B-blue)](#install) [![License: Apache-2.0](https://img.shields.io/github/license/tundra-east/tundra)](../../LICENSE)
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 
@@ -23,7 +23,7 @@
 
 需要支援 plugin 的 Claude Code。相依套件的自動安裝，以及啟用時對相依套件的處理，需要上方 Claude Code badge 標示的版本；較舊的版本請改用下方逐一安裝的清單。
 
-這些 plugin 透過 [`tundra`](https://github.com/tundra-east/tundra) marketplace 發布；這個 repo 存放的是它們的原始碼，本身不是 marketplace。
+這些 plugin 收錄在 [`tundra`](../../README.zh-TW.md) marketplace 裡。
 
 安裝 `issue-to-pr-pipeline` 即可：它把另外三個 plugin 宣告為相依套件，Claude Code 會從同一個 marketplace 自動解析並安裝它們，並在安裝輸出的最後列出新增了哪些。
 
@@ -45,8 +45,6 @@
 接著執行 `/reload-plugins` 來啟用；它也會重新解析任何缺少的相依套件。只安裝你需要的 plugin 即可：除了建立在另外三個之上的 `issue-to-pr-pipeline`，其餘都能獨立使用。
 
 第三方 marketplace 的自動更新預設是關閉的。要自動收到新版本，請開啟 `/plugin` → Marketplaces → `tundra` → Enable auto-update。
-
-**從舊的 `itpr` marketplace 遷移。** 這個 repo 以前是一個名為 `itpr` 的 marketplace，現在已經不是了：更新 `itpr` 會失敗，從它安裝的 plugin 也會停止載入。請執行 `/plugin marketplace remove itpr`（這也會解除安裝從它裝的 plugin），然後加入 `tundra` 並照上面的方式安裝。每個 plugin 請只從一個 marketplace 安裝。
 
 如果要從 clone 下來的 repo 開發這些 plugin，請用 `claude --plugin-dir ./plugins` 直接從 working tree 載入，而不是把 clone 加成 marketplace。
 
@@ -92,7 +90,7 @@
    ◉─ 11  Done                pipeline complete, PR awaiting review
 ```
 
-**只有「起草計畫」和「修改程式碼」這兩步不需要你參與。** 有兩個停止點是無條件的：計畫核准，以及開 PR 前的確認；其他每一步都可能暫停來問你，例如一個它不准自行猜測的設計決定、一個需要你處置的風險、一個測試類型的判斷，或一個品質警示。每次等待都沒有時限：暫停的執行會一直停在那裡，直到有人回答。它會在 `state.md` 寫明自己在等什麼，`resolve-issue-dashboard` 也會顯示出來。依每個停止點存在的理由分組的完整說明，見 [resolve-issue 的 README](plugins/issue-to-pr-pipeline/skills/resolve-issue/README.zh-TW.md#where-the-run-stops-for-you)。
+**只有「起草計畫」和「修改程式碼」這兩步不需要你參與。** 有兩個停止點是無條件的：計畫核准，以及開 PR 前的確認；其他每一步都可能暫停來問你，例如一個它不准自行猜測的設計決定、一個需要你處置的風險、一個測試類型的判斷，或一個品質警示。每次等待都沒有時限：暫停的執行會一直停在那裡，直到有人回答。它會在 `state.md` 寫明自己在等什麼，`resolve-issue-dashboard` 也會顯示出來。依每個停止點存在的理由分組的完整說明，見 [resolve-issue 的 README](../../plugins/issue-to-pr-pipeline/skills/resolve-issue/README.zh-TW.md#where-the-run-stops-for-you)。
 
 **一次執行要花你多少。** 大部分步驟都交給 subagent 執行，而測試和審查步驟各自要付一個撰寫者加一個獨立驗證者的成本，所以即使是一行的修正也要付這一對的費用。pipeline 裡沒有任何環節能回報自己花了多少：協調者看不到自己的 token 用量，儀表板上的計數器是用量而不是價格。實際經過時間同樣無法引用：一次執行的經過時間，大部分是它在關卡前等 **你** 的時間，所以這裡不列任何時長。請觀察你第一次執行的用量，不要只相信估計值。
 
@@ -120,7 +118,7 @@
 
 ### test-authoring
 
-把測試撰寫交給撰寫者和驗證者 subagent（共 8 個）。agent 遵守的規則隨 plugin 一起提供，並直接從 plugin 讀取，所以不會有任何東西被複製到你的 repo。若執行過一次 `setup-test-context`，它還會把這個 repo 的跨層對照表快取起來；沒有它，每個流程仍會從最接近的相鄰測試學習慣例，照常執行。完整架構見 [plugin README](plugins/test-authoring/README.zh-TW.md)。
+把測試撰寫交給撰寫者和驗證者 subagent（共 8 個）。agent 遵守的規則隨 plugin 一起提供，並直接從 plugin 讀取，所以不會有任何東西被複製到你的 repo。若執行過一次 `setup-test-context`，它還會把這個 repo 的跨層對照表快取起來；沒有它，每個流程仍會從最接近的相鄰測試學習慣例，照常執行。完整架構見 [plugin README](../../plugins/test-authoring/README.zh-TW.md)。
 
 - **setup-test-context**：為 repo 建立一次性的概況；把它的跨層對照表以慣例的形式快取在 `.claude/conventions/tests/` 下。可以重複執行，重新執行就是更新。
 - **scan-test-gaps**：找出沒有測試的程式碼和過時的測試，然後反覆委派產生與更新。

@@ -1,12 +1,12 @@
 # issue-to-pr
 
-![The resolve-issue-dashboard visualising a run mid-pipeline](docs/resolve-issue-dashboard.png)
+![The resolve-issue-dashboard visualising a run mid-pipeline](resolve-issue-dashboard.png)
 
 <sub>The `resolve-issue-dashboard` (in `issue-to-pr-pipeline`) watching a run move through the pipeline — illustrative example data.</sub>
 
 <div align="center">
 
-[![CI](https://img.shields.io/github/actions/workflow/status/tundra-east/issue-to-pr/checks.yml?branch=main&label=CI)](https://github.com/tundra-east/issue-to-pr/actions/workflows/checks.yml) [![Claude Code](https://img.shields.io/badge/Claude%20Code-2.1.143%2B-blue)](#install) [![License: Apache-2.0](https://img.shields.io/github/license/tundra-east/issue-to-pr)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/tundra-east/tundra/checks.yml?branch=main&label=CI)](https://github.com/tundra-east/tundra/actions/workflows/checks.yml) [![Claude Code](https://img.shields.io/badge/Claude%20Code-2.1.143%2B-blue)](#install) [![License: Apache-2.0](https://img.shields.io/github/license/tundra-east/tundra)](../../LICENSE)
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 
@@ -22,7 +22,7 @@ A set of [Claude Code](https://claude.com/claude-code) plugins — skills and su
 
 Requires Claude Code with plugin support. Dependency auto-install and enable-time dependency handling need the version in the Claude Code badge above; on older versions use the explicit per-plugin list below.
 
-These plugins are published through the [`tundra`](https://github.com/tundra-east/tundra) marketplace; this repository holds their source and is not a marketplace itself.
+These plugins are part of the [`tundra`](../../README.md) marketplace.
 
 Install `issue-to-pr-pipeline` — it declares the other three plugins as dependencies, so Claude Code resolves and installs them from the same marketplace automatically and lists what was added at the end of the install output.
 
@@ -44,8 +44,6 @@ Alternatively — on Claude Code older than the badge shows, where dependency au
 Then run `/reload-plugins` to activate — it also re-resolves any missing dependencies. Install only the plugins you need — they work standalone, except `issue-to-pr-pipeline`, which builds on the other three.
 
 Auto-update is off by default for third-party marketplaces. To receive new versions automatically, open `/plugin` → Marketplaces → `tundra` → Enable auto-update.
-
-**Moving from the old `itpr` marketplace.** This repository used to be a marketplace named `itpr`, and it no longer is — an `itpr` refresh now fails, and plugins installed from it stop loading. Run `/plugin marketplace remove itpr` (which also uninstalls the plugins installed from it), then add `tundra` and install as above. Install each plugin from one marketplace only.
 
 To work on the plugins from a clone, load them straight from the working tree with `claude --plugin-dir ./plugins` rather than adding the clone as a marketplace.
 
@@ -91,7 +89,7 @@ The review, test, and PR plugins are independently useful. `issue-to-pr-pipeline
    ◉─ 11  Done                pipeline complete, PR awaiting review
 ```
 
-**Drafting the plan and making the code change are the only steps that run without you.** Two stops are unconditional — plan approval and the open-PR confirmation — and every other step can pause to ask: a design decision it is barred from guessing, a risk to disposition, a test-type call, a quality flag. Each wait is unbounded — a paused run sits there until it is answered. It names what it is waiting for in `state.md`, and `resolve-issue-dashboard` shows it. Full breakdown, grouped by why each stop exists: [resolve-issue's README](plugins/issue-to-pr-pipeline/skills/resolve-issue/README.md#where-the-run-stops-for-you).
+**Drafting the plan and making the code change are the only steps that run without you.** Two stops are unconditional — plan approval and the open-PR confirmation — and every other step can pause to ask: a design decision it is barred from guessing, a risk to disposition, a test-type call, a quality flag. Each wait is unbounded — a paused run sits there until it is answered. It names what it is waiting for in `state.md`, and `resolve-issue-dashboard` shows it. Full breakdown, grouped by why each stop exists: [resolve-issue's README](../../plugins/issue-to-pr-pipeline/skills/resolve-issue/README.md#where-the-run-stops-for-you).
 
 **What a run costs you.** Most steps delegate to subagents, and the test and review steps each pay for a writer plus an independent verifier — so even a one-line fix pays for that pair. Nothing in the pipeline can report its own spend: the orchestrator cannot see its own token usage, and the dashboard's counters are volume, not price. Wall-clock is no more quotable — a run's elapsed time is mostly how long it waited for **you** at a gate, which is why no duration is quoted here. Watch your first run's usage rather than trusting an estimate.
 
@@ -119,7 +117,7 @@ Team-agnostic PR lifecycle for Azure DevOps or GitHub — the platform is detect
 
 ### test-authoring
 
-Test authoring that delegates to writer and verifier subagents (8 in total). The rules the agents obey ship with the plugin and are read from there, so nothing is copied into your repo. A one-time `setup-test-context` run additionally caches the repo's cross-layer map; without it, every workflow still runs by learning from the nearest sibling tests. See the [plugin README](plugins/test-authoring/README.md) for the full architecture.
+Test authoring that delegates to writer and verifier subagents (8 in total). The rules the agents obey ship with the plugin and are read from there, so nothing is copied into your repo. A one-time `setup-test-context` run additionally caches the repo's cross-layer map; without it, every workflow still runs by learning from the nearest sibling tests. See the [plugin README](../../plugins/test-authoring/README.md) for the full architecture.
 
 - **setup-test-context** — One-time profile of the repo; caches its cross-layer map as conventions under `.claude/conventions/tests/`. Re-runnable, and re-running is the refresh.
 - **scan-test-gaps** — Finds untested code and stale tests, then iteratively delegates generation and updates.

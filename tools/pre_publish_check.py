@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pre-publish gates for the issue-to-pr plugins.
+"""Pre-publish gates for the plugins in this repository.
 
 Every gate here was a prose instruction in CLAUDE.md that someone had to
 remember and run by hand, and this session ran four of them manually before
@@ -34,11 +34,17 @@ ALLOWED_HOSTS = {
     "claude.com", "www.python.org", "www.npmjs.com",
     "learn.microsoft.com", "www.apache.org", "img.shields.io",
     "acme.atlassian.net", "127.0.0.1", "localhost",
+    "dev.azure.com", "acme.visualstudio.com", "www.w3.org",
 }
 
 # ticket-shaped tokens that are placeholders or generic examples rather than a
 # real tracker key. anything else with three or more digits is treated as a leak.
-ALLOWED_TICKET_PREFIXES = {"acme", "gh", "issue", "hotfix", "backup"}
+ALLOWED_TICKET_PREFIXES = {"acme", "gh", "issue", "hotfix", "backup", "abc"}
+
+# domains whose addresses are fixtures rather than people. derived from the tracked
+# tree like the hosts above, since tests that match identities need addresses to match.
+ALLOWED_EMAIL_DOMAINS = {"example.com", "corp.com", "old.org", "home.net",
+                         "dev.azure.com", "visualstudio.com", "acme.visualstudio.com"}
 
 TICKET_RE = re.compile(r"(?<![A-Za-z0-9])([A-Za-z]{2,10})-([0-9]{3,})(?![0-9])")
 HOST_RE = re.compile(r"https?://([A-Za-z0-9._-]+)")
@@ -257,7 +263,9 @@ def check_leaks(root):
             if prefix.lower() not in ALLOWED_TICKET_PREFIXES:
                 failures.append(f"{rel}: carries ticket-shaped token '{prefix}-{digits}'")
         for address in set(EMAIL_RE.findall(text)):
-            if address.startswith("git@") or "noreply" in address:
+            if address.startswith("git@") or "noreply" in address.lower():
+                continue
+            if address.rsplit("@", 1)[1].lower() in ALLOWED_EMAIL_DOMAINS:
                 continue
             if True:
                 failures.append(f"{rel}: carries the address '{address}'")
@@ -305,12 +313,18 @@ def _english_target(link, lang):
     return re.sub(r"(^|/)README\." + re.escape(lang) + r"\.md(?=#|$)", r"\1README.md", link)
 
 
+def _code_blocks(text):
+    # a mermaid diagram's labels are prose the reader reads, and unlike a hand-aligned text diagram
+    # nothing in it breaks when they are translated, so only its presence and place are compared.
+    return [b.split("\n", 1)[0] if b.startswith("```mermaid") else b for b in FENCE_RE.findall(text)]
+
+
 def _shape(text, lang=None):
     """The parts of a README that must survive translation unchanged, and its outline."""
     prose = _prose(text)
     links = LINK_RE.findall(prose)
     return {
-        "code blocks": FENCE_RE.findall(text),
+        "code blocks": _code_blocks(text),
         "link targets": sorted(_english_target(link, lang) if lang else link for link in links),
         "heading levels": [len(h) for h, _ in HEADING_RE.findall(prose)],
         "table rows": len(TABLE_ROW_RE.findall(prose)),
@@ -439,37 +453,6 @@ def _git_change_facts(root, local):
     return changed, published
 
 
-def release_notice(root, published=None):
-    """The plugins whose version differs from the published copy's, as `name old -> new` lines.
-
-    Not a gate: it never fails a push, it says what the push releases.
-    tundra pins each plugin to a commit, so a bumped version pushed here reaches nobody until that pin moves,
-    and the sync that moves it lives in another repository where nothing here can see whether it ran.
-    `published` is injectable for the same reason as in check_version_bumps."""
-    local = plugin_versions(root)
-    if published is None:
-        _, published = _git_change_facts(root, local)
-        if published is None:
-            return []
-    return [f"{plugin} {published.get(plugin) or 'unpublished'} -> {version}"
-            for plugin, version in sorted(local.items()) if version != published.get(plugin)]
-
-
-def print_release_notice(root):
-    lines = release_notice(root)
-    if not lines:
-        return 0
-    print()
-    print("release: this push publishes")
-    for line in lines:
-        print(f"         {line}")
-    print("         tundra pins each plugin to a commit, so nobody receives this until that pin moves.")
-    print("         In a tundra session: python scripts/sync-plugin-sources.py --write, review the diff, push there.")
-    print("         A Claude session that ran this push: message the open tundra session (ListAgents) to do it,")
-    print("         or ask the human to open one if none is open. Do not only report this notice.")
-    return 0
-
-
 GATES = {
     "json": check_json,
     "frontmatter": check_frontmatter,
@@ -489,10 +472,7 @@ def run(root, names=None):
 
 
 def main(argv):
-    args = [a for a in argv[1:] if a != "--release-notice"]
-    root = os.path.abspath(args[0]) if args else os.getcwd()
-    if "--release-notice" in argv[1:]:
-        return print_release_notice(root)
+    root = os.path.abspath(argv[1]) if len(argv) > 1 else os.getcwd()
     results = run(root)
     total = 0
     for name in GATES:

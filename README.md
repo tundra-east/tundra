@@ -37,16 +37,16 @@ Use the full HTTPS URL above. The `tundra-east/tundra` shorthand is also accepte
 
 ### 🔁 From ticket to pull request
 
-Four plugins that take a ticket to a reviewed pull request. They live in [issue-to-pr](https://github.com/tundra-east/issue-to-pr) and are released together. `issue-to-pr-pipeline` runs the whole flow, and on Claude Code v2.1.143 or later installing it installs the other three, each of which also works on its own.
+Four plugins that take a ticket to a reviewed pull request, described in full in [their own README](docs/issue-to-pr/README.md). `issue-to-pr-pipeline` runs the whole flow, and on Claude Code v2.1.143 or later installing it installs the other three, each of which also works on its own.
 
 <img alt="The resolve-issue-dashboard following a run: the runs by repository, the pipeline's eleven steps as a ring, the token figures and each agent's tool calls" src="docs/issue-to-pr/dashboard.png" width="560">
 
 | Plugin | What it does |
 |---|---|
-| [`issue-to-pr-pipeline`](https://github.com/tundra-east/issue-to-pr#issue-to-pr-pipeline) | Takes one ticket from diagnosis to a reviewed pull request, stopping for your approval of the plan and again before the PR opens |
-| [`disconfirm-first`](https://github.com/tundra-east/issue-to-pr#disconfirm-first) | Adversarial review of an issue, a plan, or an implemented fix, before the next step builds on it |
-| [`test-authoring`](https://github.com/tundra-east/issue-to-pr#test-authoring) | Finds test gaps and writes unit and integration tests, each checked by an independent verifier |
-| [`pr-lifecycle`](https://github.com/tundra-east/issue-to-pr#pr-lifecycle) | Opens a pull request in the style of your past ones and resolves its review comments, on Azure DevOps or GitHub |
+| [`issue-to-pr-pipeline`](docs/issue-to-pr/README.md#issue-to-pr-pipeline) | Takes one ticket from diagnosis to a reviewed pull request, stopping for your approval of the plan and again before the PR opens |
+| [`disconfirm-first`](docs/issue-to-pr/README.md#disconfirm-first) | Adversarial review of an issue, a plan, or an implemented fix, before the next step builds on it |
+| [`test-authoring`](docs/issue-to-pr/README.md#test-authoring) | Finds test gaps and writes unit and integration tests, each checked by an independent verifier |
+| [`pr-lifecycle`](docs/issue-to-pr/README.md#pr-lifecycle) | Opens a pull request in the style of your past ones and resolves its review comments, on Azure DevOps or GitHub |
 
 Install all four at once:
 

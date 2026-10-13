@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 e64bfcd143f7f506ffc44f4dfa2c6ab882af52abe8739f7b15edba4a41bdf222; see CLAUDE.md "Translations of the root README" before editing -->
+<!-- translated from README.md, source sha256 3bf82b7d33f6d740fec2941ac729218649e978774b3b10baee081cf2f26796b3; see CLAUDE.md "Translations of the root README" before editing -->
 <div align="center">
 
 <picture>
@@ -38,16 +38,16 @@
 
 ### 🔁 从工单到 pull request
 
-四个 plugin，把一个工单带到经过审查的 pull request。它们放在 [issue-to-pr](https://github.com/tundra-east/issue-to-pr/blob/main/README.zh-CN.md) 中，并且一起发布。`issue-to-pr-pipeline` 运行整个流程；在 Claude Code v2.1.143 或更高版本上，安装它就会一并安装另外三个，而那三个也都可以独立使用。
+四个 plugin，把一个工单带到经过审查的 pull request，完整说明在[它们自己的 README](docs/issue-to-pr/README.zh-CN.md)中。`issue-to-pr-pipeline` 运行整个流程；在 Claude Code v2.1.143 或更高版本上，安装它就会一并安装另外三个，而那三个也都可以独立使用。
 
 <img alt="resolve-issue-dashboard 正在跟踪一次运行：按 repository 分组的运行列表、pipeline 的十一个步骤排成的环、token 统计，以及每个 agent 的工具调用" src="docs/issue-to-pr/dashboard.png" width="560">
 
 | Plugin | 做什么 |
 |---|---|
-| [`issue-to-pr-pipeline`](https://github.com/tundra-east/issue-to-pr/blob/main/README.zh-CN.md#issue-to-pr-pipeline) | 把一个工单从诊断带到经过审查的 pull request，批准计划前和创建 PR 前各停下来等你一次 |
-| [`disconfirm-first`](https://github.com/tundra-east/issue-to-pr/blob/main/README.zh-CN.md#disconfirm-first) | 在下一步以它为基础之前，对 issue、计划或已实现的修复进行对抗式审查 |
-| [`test-authoring`](https://github.com/tundra-east/issue-to-pr/blob/main/README.zh-CN.md#test-authoring) | 找出测试缺口，编写单元测试和集成测试，每个测试都由独立的验证者检查 |
-| [`pr-lifecycle`](https://github.com/tundra-east/issue-to-pr/blob/main/README.zh-CN.md#pr-lifecycle) | 在 Azure DevOps 或 GitHub 上按你以往 PR 的风格创建 pull request，并处理它的评审意见 |
+| [`issue-to-pr-pipeline`](docs/issue-to-pr/README.zh-CN.md#issue-to-pr-pipeline) | 把一个工单从诊断带到经过审查的 pull request，批准计划前和创建 PR 前各停下来等你一次 |
+| [`disconfirm-first`](docs/issue-to-pr/README.zh-CN.md#disconfirm-first) | 在下一步以它为基础之前，对 issue、计划或已实现的修复进行对抗式审查 |
+| [`test-authoring`](docs/issue-to-pr/README.zh-CN.md#test-authoring) | 找出测试缺口，编写单元测试和集成测试，每个测试都由独立的验证者检查 |
+| [`pr-lifecycle`](docs/issue-to-pr/README.zh-CN.md#pr-lifecycle) | 在 Azure DevOps 或 GitHub 上按你以往 PR 的风格创建 pull request，并处理它的评审意见 |
 
 一次安装全部四个：
 
