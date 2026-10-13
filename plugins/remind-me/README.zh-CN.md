@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 1bcab4d2d384d32f9a7ba05c9731f8800c3f3054a4450b0523814f795a344978; see the root CLAUDE.md "Translations of a plugin's README" before editing -->
+<!-- translated from README.md, source sha256 6a29b8da5199cc41bfbae873213319d2d4beabf5bc9ffdbd18a67d49d791b198; see the root CLAUDE.md "Translations of a plugin's README" before editing -->
 # remind-me
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)

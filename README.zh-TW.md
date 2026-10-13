@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 3e331d2ff9d72d6b8fa02b5eae808ca8661a7741052075c2e9f6b25d098e7f0d; see CLAUDE.md "Translations of the root README" before editing -->
+<!-- translated from README.md, source sha256 e64bfcd143f7f506ffc44f4dfa2c6ab882af52abe8739f7b15edba4a41bdf222; see CLAUDE.md "Translations of the root README" before editing -->
 <div align="center">
 
 <picture>
@@ -12,7 +12,7 @@
 
 </div>
 
-Claude Code plugin marketplace。
+一個 Claude Code plugin marketplace：收錄把工單帶到經過審查的 pull request 的 plugin，以及讓你看清自己工作方式的 plugin。
 
 <a id="install"></a>
 ## 📦 安裝

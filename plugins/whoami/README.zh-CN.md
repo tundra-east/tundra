@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 7ec3f3ec18df5d8cf6d5d55f97b7f0b3736b8364970fca2dfd3b618f9a4d6981; see the root CLAUDE.md "Translations of a plugin's README" before editing -->
+<!-- translated from README.md, source sha256 055cd5dc7802f08921c59d769a4cab9194a8262b486f0fb7b7126dfc78492046; see the root CLAUDE.md "Translations of a plugin's README" before editing -->
 # whoami
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)

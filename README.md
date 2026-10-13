@@ -11,7 +11,7 @@
 
 </div>
 
-A Claude Code plugin marketplace.
+A Claude Code plugin marketplace: plugins that take a ticket to a reviewed pull request, and plugins that show you how you work.
 
 <a id="install"></a>
 ## 📦 Install

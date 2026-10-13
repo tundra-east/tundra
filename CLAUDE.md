@@ -6,7 +6,7 @@ This file covers the repository as a whole. A plugin that lives under `plugins/`
 
 `tundra` is a public Claude Code plugin marketplace. `.claude-plugin/marketplace.json` at the root lists what is on offer. An entry's `source` is either a relative path into `plugins/` or a pinned commit in another repository.
 
-**`tundra` is the default home for a plugin.** Its sibling `tundra-internal` takes only plugins whose content is itself internal — a tenant, an internal service, an internal process. The reason is the direction of travel: a plugin never moves from here to there, while the other way round means every user has to uninstall and re-add, because a plugin's identity is `<plugin>@<marketplace>` and nothing migrates across marketplaces.
+**Nothing specific to one organisation goes into a plugin here** — no tenant, no internal service, no internal process — because the repository is public. A plugin that needs any of that belongs in a marketplace of its own from the start. Moving it later means every user has to uninstall and re-add, because a plugin's identity is `<plugin>@<marketplace>` and nothing migrates across marketplaces.
 
 ## Layout
 
