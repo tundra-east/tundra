@@ -141,7 +141,7 @@ Working notes live in `.claude/plans/`, which holds a `.gitignore` of its own th
 
 `.gitattributes` pins the working tree to LF on every platform, `*.cmd` excepted.
 
-**This repository is public.** Nothing that reaches the remote may carry internal detail — no organisation's name, no ticket ids in commit subjects, bodies or branch names, and no internal host or repository names. Skill prose uses `acme-…` as the placeholder ticket format. The `leaks` gate catches hosts, ticket-shaped tokens and addresses; for anything else, grep a diff before committing.
+**This repository is public.** Nothing that reaches the remote may carry internal detail — no organisation's name, no ticket ids in commit subjects, bodies or branch names, and no internal host or repository names. Skill prose uses `acme-…` as the placeholder ticket format. The `leaks` gate catches hosts, GitHub accounts, ticket-shaped tokens and addresses; for anything else, grep a diff before committing.
 
 Commits: a plain summary of 50 characters or fewer, with no prefix and no attribution trailer, committed to `main`.
 

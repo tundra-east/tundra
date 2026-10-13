@@ -208,8 +208,30 @@ def main():
         case(tmp, "leak-host", "leaks",
              extra_doc="See https://" + "tickets.internal" + ".invalid/board for detail.\n")
 
+        # github.com itself is an allowed host, so the account in the path is the only thing that can leak here.
+        # the owner opens with a capital, so an owner pattern that only admits lowercase would let it through.
+        case(tmp, "leak-github-owner", "leaks",
+             extra_doc="Clone https://github.com/" + "Some" + "Org" + "/billing for the source.\n")
+
+        # an ssh remote names the account after a colon rather than a slash,
+        # and the git@ prefix keeps the address check out of it.
+        case(tmp, "leak-github-owner-in-ssh-form", "leaks",
+             extra_doc="Clone git@github.com:" + "someorg" + "/billing.git for the source.\n")
+
+        # GitHub account names are case-insensitive, so an allowed owner in any case is still allowed.
+        case(tmp, "allowed-github-owner-in-mixed-case-is-not-a-leak", None,
+             extra_doc="Clone https://github.com/Tundra-East/tundra for the source.\n")
+
         case(tmp, "leak-ticket", "leaks",
              extra_doc="Fixes " + "PROJ" + "-" + "4821" + " in the billing path.\n")
+
+        # a young project's keys are two digits long, so two digits are already ticket-shaped.
+        case(tmp, "leak-two-digit-ticket", "leaks",
+             extra_doc="Fixes " + "PROJ" + "-" + "48" + " in the billing path.\n")
+
+        # pins the lower bound: one digit after the dash reads as a version or a count, not a key.
+        case(tmp, "one-digit-ticket-is-not-a-leak", None,
+             extra_doc="Step PROJ-4 runs after the build.\n")
 
         case(tmp, "leak-address", "leaks",
              extra_doc="Ask " + "jane.doe" + "@" + "billing.invalid" + " for access.\n")
@@ -231,6 +253,13 @@ def main():
         case(tmp, "allowlisted-hosts-and-prefixes-are-not-leaks", None,
              extra_doc="See https://dev.azure.com/acme, https://acme.visualstudio.com/repo "
                        "and https://www.w3.org/2000/svg, as in ABC-123.\n")
+
+        # one of each newer allowlist entry, each shaped so it would be reported without its entry,
+        # so removing any one of them turns this case red.
+        case(tmp, "newer-allowlisted-hosts-and-prefixes-are-not-leaks", None,
+             extra_doc="Read UTF-16 files, run on Electron-41 in Sprint-42, "
+                       "and post to https://api.tempo.io/4/worklogs "
+                       "or https://api.us.tempo.io/4/worklogs.\n")
 
         # each translation defect below breaks one thing the gate compares, and only that one,
         # so deleting any single comparison from the gate leaves its case unreported.

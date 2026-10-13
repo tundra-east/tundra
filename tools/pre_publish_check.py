@@ -35,18 +35,26 @@ ALLOWED_HOSTS = {
     "learn.microsoft.com", "www.apache.org", "img.shields.io",
     "acme.atlassian.net", "127.0.0.1", "localhost",
     "dev.azure.com", "acme.visualstudio.com", "www.w3.org",
+    "api.tempo.io", "api.us.tempo.io",
 }
 
+# accounts a github.com URL may name. the host alone is on the allowlist above,
+# so without this an organisation's name in the URL's path would pass unseen.
+ALLOWED_GITHUB_OWNERS = {"tundra-east", "acme", "agentskills", "a-b", "other"}
+
 # ticket-shaped tokens that are placeholders or generic examples rather than a
-# real tracker key. anything else with three or more digits is treated as a leak.
-ALLOWED_TICKET_PREFIXES = {"acme", "gh", "issue", "hotfix", "backup", "abc"}
+# real tracker key. anything else with two or more digits is treated as a leak,
+# since a young project's keys are two digits long.
+ALLOWED_TICKET_PREFIXES = {"acme", "gh", "issue", "hotfix", "backup", "abc",
+                           "utf", "electron", "sprint"}
 
 # domains whose addresses are fixtures rather than people. derived from the tracked
 # tree like the hosts above, since tests that match identities need addresses to match.
 ALLOWED_EMAIL_DOMAINS = {"example.com", "corp.com", "old.org", "home.net",
                          "dev.azure.com", "visualstudio.com", "acme.visualstudio.com"}
 
-TICKET_RE = re.compile(r"(?<![A-Za-z0-9])([A-Za-z]{2,10})-([0-9]{3,})(?![0-9])")
+TICKET_RE = re.compile(r"(?<![A-Za-z0-9])([A-Za-z]{2,10})-([0-9]{2,})(?![0-9])")
+GITHUB_OWNER_RE = re.compile(r"github\.com[/:]([A-Za-z0-9-]+)")
 HOST_RE = re.compile(r"https?://([A-Za-z0-9._-]+)")
 # a host with no dot cannot be a real machine name in published prose, and both
 # occurrences in this repo are placeholders (`https://host/path`, `https://org`).
@@ -258,6 +266,9 @@ def check_leaks(root):
             if host in ALLOWED_HOSTS or PLACEHOLDER_HOST.match(host):
                 continue
             failures.append(f"{rel}: references host '{host}', which is not on the allowlist")
+        for owner in set(GITHUB_OWNER_RE.findall(text)):
+            if owner.lower() not in ALLOWED_GITHUB_OWNERS:
+                failures.append(f"{rel}: names the GitHub account '{owner}', which is not on the allowlist")
         for prefix, digits in set(TICKET_RE.findall(text)):
             if prefix.lower() not in ALLOWED_TICKET_PREFIXES:
                 failures.append(f"{rel}: carries ticket-shaped token '{prefix}-{digits}'")

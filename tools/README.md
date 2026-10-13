@@ -18,7 +18,7 @@ Every gate here replaced a prose instruction that someone had to remember and ru
 | `frontmatter` | A skill with no `name` or `description`, or a name that disagrees with its directory. |
 | `descriptions` | A skill or agent description over the Agent Skills specification's 1,024-character limit. Counted in characters, which is why this does not shell out to `skills-ref` — that validator reads the file with no encoding and counts bytes on a cp1252 Windows locale, inflating every em-dash into two phantom characters. |
 | `versions` | A plugin changed against the published tree but still carrying the version already published. The install cache is keyed by version, so that change reaches nobody while the push still looks successful. |
-| `leaks` | A URL host outside the allowlist, a ticket-shaped token whose prefix is not a known placeholder, or an address that is neither a `noreply` form nor on a fixture domain the gate allows. This repository is public. |
+| `leaks` | A URL host outside the allowlist, a GitHub account outside its own allowlist, a ticket-shaped token whose prefix is not a known placeholder, or an address that is neither a `noreply` form nor on a fixture domain the gate allows. This repository is public. |
 
 ## How the gates are tested
 
