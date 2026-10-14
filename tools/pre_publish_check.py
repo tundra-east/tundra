@@ -322,10 +322,29 @@ def _english_target(link, lang):
     return re.sub(r"(^|/)README\." + re.escape(lang) + r"\.md(?=#|$)", r"\1README.md", link)
 
 
+# one line of a ```tree block: the branch glyphs, the entry's name, then after two or more spaces its description.
+TREE_LINE_RE = re.compile(r"^((?:│   |    |├── |└── )*)(\S.*?)(?: {2,}\S.*)?$")
+
+
+def _tree_names(block):
+    # the description column is prose the reader reads, and the names to its left keep their alignment
+    # whatever language follows them, so only the names are compared.
+    return "\n".join("".join(m.groups()) if (m := TREE_LINE_RE.match(line)) else line
+                     for line in block.split("\n"))
+
+
 def _code_blocks(text):
     # a mermaid diagram's labels are prose the reader reads, and unlike a hand-aligned text diagram
     # nothing in it breaks when they are translated, so only its presence and place are compared.
-    return [b.split("\n", 1)[0] if b.startswith("```mermaid") else b for b in FENCE_RE.findall(text)]
+    blocks = []
+    for b in FENCE_RE.findall(text):
+        if b.startswith("```mermaid"):
+            blocks.append(b.split("\n", 1)[0])
+        elif b.startswith("```tree"):
+            blocks.append(_tree_names(b))
+        else:
+            blocks.append(b)
+    return blocks
 
 
 def _shape(text, lang=None):

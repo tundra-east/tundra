@@ -139,17 +139,17 @@ The plugins themselves are just Markdown and JSON — nothing to build. A few sk
 
 - [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) with the `azure-devops` extension (`az extension add --name azure-devops`) — required by `pr-lifecycle` on Azure DevOps remotes, which it drives through `az repos` / `az devops`.
 - [GitHub CLI](https://cli.github.com/) (`gh`, authenticated) — required by `pr-lifecycle` on GitHub remotes, which it drives through `gh pr` / `gh api`.
-- [Atlassian MCP Server](https://www.npmjs.com/package/@anthropic-ai/atlassian-mcp) in your Claude Code MCP settings — optional; enables Jira integration for `review-issue-fact`, `resolve-issue`, and the Jira link in `open-pr`. These skills fall back to a pasted link or plain text when it is absent.
+- Atlassian MCP Server in your Claude Code MCP settings — optional; enables Jira integration for `review-issue-fact`, `resolve-issue`, and the Jira link in `open-pr`. These skills fall back to a pasted link or plain text when it is absent.
 - [Python](https://www.python.org/downloads/) on PATH — **optional**, and only for `resolve-issue-dashboard`, which runs a local standard-library server (no `pip install`, no virtualenv). Tested on 3.13 and 3.14, on Windows and Linux. Install it with `winget install Python.Python.3.13` on Windows (per-user scope, no administrator needed), `brew install python` on macOS, or your distribution's package manager. Without it the dashboard declines to start and says so in one line; `resolve-issue` and every other skill run exactly as they would otherwise, because the dashboard only observes.
 
 <a id="repository-layout"></a>
 ## 📁 Repository layout
 
-```
+```tree
 plugins/<plugin>/
 ├── .claude-plugin/plugin.json     plugin metadata (name, version, dependencies)
 ├── skills/<skill>/SKILL.md        a user-invocable skill
 ├── agents/<agent>.md              a subagent (test-authoring only)
-├── resources/                     bundled templates, static files, hook blocks
+├── resources/                     bundled templates and static files
 └── docs/                          deeper design docs
 ```

@@ -1,4 +1,6 @@
 *.local.json
+.tempo_token
+plugins/tempo-logger/skills/tempo-logger-workspace/
 __pycache__/
 *.py[cod]
 .venv/

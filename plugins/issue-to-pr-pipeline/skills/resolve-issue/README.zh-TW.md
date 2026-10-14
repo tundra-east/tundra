@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 8feb19c242f03a101396c65e09c9313b1d9f083590bf2ad6369c9e6fa6c62e8e; see CLAUDE.md "Translations of the root README" before editing -->
+<!-- translated from README.md, source sha256 8feb19c242f03a101396c65e09c9313b1d9f083590bf2ad6369c9e6fa6c62e8e; see the root CLAUDE.md "Translations" before editing -->
 # resolve-issue
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)

@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 f7a146173e296ba3cbc2e451204d47776cb524e0bf3db55d4ddde530557306f8; see CLAUDE.md "Translations of the root README" before editing -->
+<!-- translated from README.md, source sha256 c67379e18676906738bf8fc0e3c77ffe6dc65f9a1ffc6eb10845f0252add6d9e; see the root CLAUDE.md "Translations" before editing -->
 # issue-to-pr
 
 ![resolve-issue-dashboard 正在展示一次运行到一半的 pipeline](resolve-issue-dashboard.png)
@@ -140,17 +140,17 @@ plugin 本身只是 Markdown 和 JSON，没有任何东西需要构建。少数 
 
 - [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) 以及 `azure-devops` 扩展（`az extension add --name azure-devops`）：`pr-lifecycle` 在 Azure DevOps remote 上需要它，通过 `az repos` / `az devops` 操作。
 - [GitHub CLI](https://cli.github.com/)（`gh`，需已登录）：`pr-lifecycle` 在 GitHub remote 上需要它，通过 `gh pr` / `gh api` 操作。
-- 在 Claude Code 的 MCP 设置中加入 [Atlassian MCP Server](https://www.npmjs.com/package/@anthropic-ai/atlassian-mcp)：可选；为 `review-issue-fact`、`resolve-issue` 启用 Jira 集成，并让 `open-pr` 加上 Jira 链接。没有它时，这些 skill 会改用粘贴的链接或纯文本。
+- 在 Claude Code 的 MCP 设置中加入 Atlassian MCP Server：可选；为 `review-issue-fact`、`resolve-issue` 启用 Jira 集成，并让 `open-pr` 加上 Jira 链接。没有它时，这些 skill 会改用粘贴的链接或纯文本。
 - PATH 上的 [Python](https://www.python.org/downloads/)：**可选**，而且只有 `resolve-issue-dashboard` 需要，它会在本地运行一个只用标准库的服务器（不需要 `pip install`，也不需要 virtualenv）。已在 Windows 和 Linux 上用 3.13 和 3.14 测试。在 Windows 上用 `winget install Python.Python.3.13` 安装（用户范围，不需要管理员权限），macOS 用 `brew install python`，或者用你的发行版的包管理器。没有它时，仪表盘会拒绝启动并用一行说明原因；`resolve-issue` 和其他所有 skill 的运行完全不受影响，因为仪表盘只负责观察。
 
 <a id="repository-layout"></a>
 ## 📁 Repo 结构
 
-```
+```tree
 plugins/<plugin>/
-├── .claude-plugin/plugin.json     plugin metadata (name, version, dependencies)
-├── skills/<skill>/SKILL.md        a user-invocable skill
-├── agents/<agent>.md              a subagent (test-authoring only)
-├── resources/                     bundled templates, static files, hook blocks
-└── docs/                          deeper design docs
+├── .claude-plugin/plugin.json     plugin 的元数据（名称、版本、依赖）
+├── skills/<skill>/SKILL.md        用户可以调用的 skill
+├── agents/<agent>.md              subagent（只有 test-authoring 有）
+├── resources/                     随附的模板与静态文件
+└── docs/                          更深入的设计文档
 ```

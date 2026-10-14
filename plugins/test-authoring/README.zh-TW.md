@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 98876cdefb3886133692c15bd55b8d59d98319a14dd0aa56c7eaa5a27bf6a621; see CLAUDE.md "Translations of the root README" before editing -->
+<!-- translated from README.md, source sha256 ce45d46a4bb8fa730113507da00434831633cd893ffcc897bb6a28bdfe87ea04; see the root CLAUDE.md "Translations" before editing -->
 # test-authoring
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
@@ -12,32 +12,26 @@
 <a id="plugin-structure"></a>
 ## Plugin 結構
 
-```
+```tree
 plugins/test-authoring/
-├── .claude-plugin/plugin.json              # plugin metadata
-├── README.md                               # this file
-├── skills/                                 # 6 plugin-bundled skills
-│   ├── setup-test-context/SKILL.md         # one-time repo profile (optional)
-│   ├── scan-test-gaps/SKILL.md
-│   ├── add-unit-test/SKILL.md
-│   ├── add-integration-test/SKILL.md
-│   ├── update-unit-test/SKILL.md
-│   └── update-integration-test/SKILL.md
-├── agents/                                 # 8 plugin-bundled subagents (flat, bare names)
-│   ├── add-{unit,integration}-test-agent.md
-│   ├── update-{unit,integration}-test-agent.md
-│   ├── verify-add-{unit,integration}-test-agent.md
-│   └── verify-update-{unit,integration}-test-agent.md
+├── .claude-plugin/plugin.json      plugin 的中繼資料
+├── CLAUDE.md                       維護這個 plugin 時的說明
+├── README.md                       這一頁，以及它的翻譯
+├── skills/                         六個 skill，各自有一份 SKILL.md，以及說明模型讀了它之後必須做到什麼的 evals/
+│   ├── setup-test-context/         為 repository 做一次概況分析，並快取它的測試慣例（選用）
+│   │   └── references/             概況如何分析、會寫出什麼
+│   ├── scan-test-gaps/             找出沒有測試的程式碼和過時的測試，再交給撰寫者處理
+│   ├── add-unit-test/              為目標撰寫單元測試
+│   ├── add-integration-test/       為目標撰寫整合測試
+│   ├── update-unit-test/           稽核既有的單元測試並更新
+│   └── update-integration-test/    稽核既有的整合測試並更新
+├── agents/                         skill 會啟動的撰寫者與驗證者 subagent
 ├── resources/
-│   ├── templates/                          # the rule books; read from here, never copied per-repo
-│   │   ├── rules/                          # 8 .md
-│   │   └── shared/                         # scope-resolution.md
-│   └── static/                             # plugin-internal, never written per-repo
-│       └── status-legend.md                # controlled vocabulary, do not extend
-└── docs/                                   # detailed per-skill / per-agent / shared docs
-    ├── skills/{readme-*.md}                # one per skill
-    ├── agents/{readme-*.md}                # high-complexity update + verify-update agents
-    └── shared/{readme-*.md}                # cross-cutting concept primers
+│   ├── templates/                  skill 執行時直接從 plugin 讀取，絕不複製到 repository
+│   │   ├── rules/                  撰寫者、驗證者和 skill 遵守的規則書
+│   │   └── shared/                 每個 skill 共用的程序，例如範圍解析
+│   └── static/status-legend.md     每份報告都使用的狀態標籤
+└── docs/                           較長的說明：每個 skill 一份、更新類 agent，以及共用概念
 ```
 
 **plugin 內建 vs 每個 repo 各自的**：`plugins/test-authoring/` 底下的一切，包括 skill、agent、規則書和靜態資源，都隨 plugin 提供並直接從 plugin 讀取，所以 plugin 一升級，每個使用端 repo 都會同時拿到更新。唯一屬於各個 repo 的檔案，是 `setup-test-context` 從分析產生的那一到兩份慣例檔；它們沒有範本，因為它們正是為了那些無法隨 plugin 提供的內容而存在。
@@ -49,11 +43,11 @@ plugins/test-authoring/
 
 當 `/test-authoring:setup-test-context` 在使用者的 repo 中執行時，它會寫入一到兩份檔案，兩者都由分析產生，不會複製或填寫任何範本。它不會碰那個目錄以外的任何東西：忽略規則是一份範圍限定的 `.claude/conventions/.gitignore`，內容是 `*`，和 `resolve-issue` 用於 `.claude/resolve/` 的做法相同。repo 根目錄的 `.gitignore` 屬於團隊，從不被修改。
 
-```
+```tree
 .claude/
-└── conventions/tests/                  # repo-specific patterns, learned from the codebase
-    ├── project-architecture.md         # source/test layout, naming, mirroring, shared test project
-    └── common-verification-patterns.md # only if a qualifying pattern was detected
+└── conventions/tests/                     setup-test-context 從這個 repository 的測試學到的慣例
+    ├── project-architecture.md            原始碼與測試的配置、命名、對應方式、共用的測試專案
+    └── common-verification-patterns.md    只在找到符合條件的模式時才寫出
 ```
 
 各測試類型的 `{type}-test-conventions.md` **不會** 被寫入，plugin 也不再讀取它們。撰寫者使用最接近的相鄰測試，它永遠比快取還新；而一份沒有東西會產生、卻會被每個撰寫者信任的檔案，是一個注入的入口，而且因為路徑被 gitignore，在審查中看不見。

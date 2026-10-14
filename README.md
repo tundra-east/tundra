@@ -11,7 +11,7 @@
 
 </div>
 
-A Claude Code plugin marketplace: plugins that take a ticket to a reviewed pull request, and plugins that show you how you work.
+A Claude Code plugin marketplace: plugins that take a ticket to a reviewed pull request, plugins that show you how you work, and one that fills in your timesheet.
 
 <a id="install"></a>
 ## 📦 Install
@@ -73,7 +73,7 @@ Install it with:
 
 #### [`remind-me`](plugins/remind-me/README.md)
 
-What you left open in the sessions you ran on a given day or over a range of days, checked against the live state of each pull request and branch, with a way back into each session.
+What you left open in the sessions you ran on a given day or over a range of days, checked against the live state of each pull request and branch, with a quick link back into each session.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/remind-me/thumbnails-dark.png">
@@ -84,4 +84,18 @@ Install it with:
 
 ```
 /plugin install remind-me@tundra
+```
+
+### ⏱️ Your timesheet
+
+#### [`tempo-logger`](plugins/tempo-logger/README.md)
+
+Fills in your Tempo timesheet from what you say you did.
+
+<img alt="A mock-up of Tempo's week view after a run: eight hours on the same work item on each of the five weekdays" src="docs/tempo-logger/week-filled.png" width="720">
+
+Install it with:
+
+```
+/plugin install tempo-logger@tundra
 ```

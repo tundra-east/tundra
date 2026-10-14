@@ -1,9 +1,9 @@
-<!-- translated from README.md, source sha256 6a29b8da5199cc41bfbae873213319d2d4beabf5bc9ffdbd18a67d49d791b198; see the root CLAUDE.md "Translations of a plugin's README" before editing -->
+<!-- translated from README.md, source sha256 baaf88c3f4256355f515896834d40735dafa2de414a0ad623422bf861e584b8d; see the root CLAUDE.md "Translations" before editing -->
 # remind-me
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 
-你在某一天或一段日期里运行过的 Claude Code session 还留下哪些没做完的事，按 repository 分组，逐一对照它们提到的 pull request 和 branch 的实时状态，并提供回到每个 session 自己文件夹的入口。
+你在某一天或一段日期里运行过的 Claude Code session 还留下哪些没做完的事，按 repository 分组，逐一对照它们提到的 pull request 和 branch 的实时状态，并提供一键回到每个 session 自己文件夹的链接。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/overview-dark.zh-CN.jpg">

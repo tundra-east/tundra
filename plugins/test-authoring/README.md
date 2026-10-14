@@ -10,32 +10,26 @@ The plugin is **cohesive**: skills are designed to work together. Every skill re
 
 ## Plugin structure
 
-```
+```tree
 plugins/test-authoring/
-├── .claude-plugin/plugin.json              # plugin metadata
-├── README.md                               # this file
-├── skills/                                 # 6 plugin-bundled skills
-│   ├── setup-test-context/SKILL.md         # one-time repo profile (optional)
-│   ├── scan-test-gaps/SKILL.md
-│   ├── add-unit-test/SKILL.md
-│   ├── add-integration-test/SKILL.md
-│   ├── update-unit-test/SKILL.md
-│   └── update-integration-test/SKILL.md
-├── agents/                                 # 8 plugin-bundled subagents (flat, bare names)
-│   ├── add-{unit,integration}-test-agent.md
-│   ├── update-{unit,integration}-test-agent.md
-│   ├── verify-add-{unit,integration}-test-agent.md
-│   └── verify-update-{unit,integration}-test-agent.md
+├── .claude-plugin/plugin.json      plugin metadata
+├── CLAUDE.md                       notes for working on the plugin
+├── README.md                       this page, with its translations
+├── skills/                         the six skills, each a SKILL.md with evals/ for what a model reading it must do
+│   ├── setup-test-context/         profile a repository once and cache its test conventions (optional)
+│   │   └── references/             how the profile is analysed and what it writes
+│   ├── scan-test-gaps/             find untested code and stale tests, then hand them to the writers
+│   ├── add-unit-test/              write unit tests for a target
+│   ├── add-integration-test/       write integration tests for a target
+│   ├── update-unit-test/           audit existing unit tests and update them
+│   └── update-integration-test/    audit existing integration tests and update them
+├── agents/                         the writer and verifier subagents the skills spawn
 ├── resources/
-│   ├── templates/                          # the rule books; read from here, never copied per-repo
-│   │   ├── rules/                          # 8 .md
-│   │   └── shared/                         # scope-resolution.md
-│   └── static/                             # plugin-internal, never written per-repo
-│       └── status-legend.md                # controlled vocabulary, do not extend
-└── docs/                                   # detailed per-skill / per-agent / shared docs
-    ├── skills/{readme-*.md}                # one per skill
-    ├── agents/{readme-*.md}                # high-complexity update + verify-update agents
-    └── shared/{readme-*.md}                # cross-cutting concept primers
+│   ├── templates/                  read from the plugin while a skill runs, never copied into a repository
+│   │   ├── rules/                  the rule books that writers, verifiers and the skills follow
+│   │   └── shared/                 procedures every skill shares, such as resolving what is in scope
+│   └── static/status-legend.md     the status labels every report uses
+└── docs/                           longer explanations: one per skill, the update agents, and shared concepts
 ```
 
 **Plugin-bundled vs per-repo**: everything under `plugins/test-authoring/` — skills, agents, rule books, static assets — ships in the plugin and is read from there, so a plugin upgrade reaches every consumer at once. The only per-repo files are the one or two conventions `setup-test-context` generates from analysis — no template exists for them, because they exist precisely for what cannot be shipped.
@@ -46,11 +40,11 @@ plugins/test-authoring/
 
 When `/test-authoring:setup-test-context` runs in a consumer repo it writes one or two files, both generated from the analysis — no template is copied or filled. It touches nothing outside that directory: the ignore rule is a scoped `.claude/conventions/.gitignore` containing `*`, the same pattern `resolve-issue` uses for `.claude/resolve/`. The repo-root `.gitignore` is the team's and is never edited.
 
-```
+```tree
 .claude/
-└── conventions/tests/                  # repo-specific patterns, learned from the codebase
-    ├── project-architecture.md         # source/test layout, naming, mirroring, shared test project
-    └── common-verification-patterns.md # only if a qualifying pattern was detected
+└── conventions/tests/                     what setup-test-context learned about this repository's tests
+    ├── project-architecture.md            source and test layout, naming, mirroring, the shared test project
+    └── common-verification-patterns.md    written only when a qualifying pattern was found
 ```
 
 Per-type `{type}-test-conventions.md` are **not** written, and the plugin no longer reads them either. Writers use the nearest sibling, which is always more current than a cache — and a file nothing generates but every writer would trust is an injection surface, invisible in review because the path is gitignored.

@@ -415,8 +415,8 @@ def test_is_question():
 
 def test_pull_requests_azure():
     check("pullrequest/<n>",
-          cl.pull_requests("https://dev.azure.com/acme/p/_git/r/pullrequest/151943"), {"azure:151943"})
-    check("!<n>", cl.pull_requests("opened !151943."), {"azure:151943"})
+          cl.pull_requests("https://dev.azure.com/acme/p/_git/r/pullrequest/2468"), {"azure:2468"})
+    check("!<n>", cl.pull_requests("opened !2468."), {"azure:2468"})
     check("!<n> at the start", cl.pull_requests("!4321 merged"), {"azure:4321"})
     check("!<n> inside a word", cl.pull_requests("abc!123"), set())
     check("!<n> after a slash", cl.pull_requests("a/!123"), set())
@@ -492,7 +492,7 @@ def _rich_session():
                        msg_id="m1", usage=_usage(10, 5), branch="feature"),
             _assistant([_tool_use("Read", "git commit -m not-a-shell")], at="10:05", msg_id="m1",
                        usage=_usage(10, 5)),
-            _user([_tool_result("Created !151943")], at="10:06"),
+            _user([_tool_result("Created !2468")], at="10:06"),
             # a list-content result is searched through its text blocks
             _user([_tool_result([{"type": "text", "text": "https://dev.azure.com/a/p/_git/r/pullrequest/888"}])],
                   at="10:07"),
@@ -524,7 +524,7 @@ def test_read_session():
           [{"at": DAY + " 10:00", "kind": "prompt", "text": "fix the build"}])
     check("questions", session["questions"], [{"at": DAY + " 10:05", "text": "Want me to open the PR?"}])
     check("pull requests from results, replies and commands, sorted", session["pull_requests"],
-          ["azure:151943", "azure:888", "github:acme/widgets#12"])
+          ["azure:2468", "azure:888", "github:acme/widgets#12"])
     check("last reply is the last non-blank text", session["last_reply"],
           {"at": DAY + " 11:00", "text": "Merged. See https://github.com/acme/widgets/pull/12"})
     check("usage: split reply once, sidechain left out, subagent added", session["usage"],
@@ -571,7 +571,7 @@ def test_read_session_after_the_day():
         _assistant("Done.", at="11:00", msg_id="m1", usage=_usage(5, 1)),
         _user("merge it", at="09:15", day="2026-09-05", branch="later"),
         _user("<command-name>/remind-me</command-name>", at="08:00", day=TODAY, branch="later"),
-        _user([_tool_result("Created !151943")], at="08:01", day=TODAY, branch="later"),
+        _user([_tool_result("Created !2468")], at="08:01", day=TODAY, branch="later"),
         _assistant("Merged https://github.com/acme/widgets/pull/12. Want me to push?", at="08:02", day=TODAY,
                    msg_id="m2", usage=_usage(100, 50), branch="later"),
         _user("<command-name>/review</command-name><command-args>42</command-args>", at="08:03", day=TODAY,

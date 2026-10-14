@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 3bf82b7d33f6d740fec2941ac729218649e978774b3b10baee081cf2f26796b3; see CLAUDE.md "Translations of the root README" before editing -->
+<!-- translated from README.md, source sha256 99d146fe8b60a78a8d75d4e4f528be87de23319f1fb0b775b18bce5cbf865739; see the root CLAUDE.md "Translations" before editing -->
 <div align="center">
 
 <picture>
@@ -12,7 +12,7 @@
 
 </div>
 
-一個 Claude Code plugin marketplace：收錄把工單帶到經過審查的 pull request 的 plugin，以及讓你看清自己工作方式的 plugin。
+一個 Claude Code plugin marketplace：收錄把工單帶到經過審查的 pull request 的 plugin，讓你看清自己工作方式的 plugin，以及一個幫你填工時表的 plugin。
 
 <a id="install"></a>
 ## 📦 安裝
@@ -74,7 +74,7 @@
 
 #### [`remind-me`](plugins/remind-me/README.zh-TW.md)
 
-你在某一天或一段日期裡跑過的 session 還留下哪些沒做完的事，逐一對照每個 pull request 和 branch 的即時狀態，並提供回到每個 session 的入口。
+你在某一天或一段日期裡跑過的 session 還留下哪些沒做完的事，逐一對照每個 pull request 和 branch 的即時狀態，並提供一鍵回到每個 session 的連結。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/remind-me/thumbnails-dark.png">
@@ -85,4 +85,18 @@
 
 ```
 /plugin install remind-me@tundra
+```
+
+### ⏱️ 你的工時表
+
+#### [`tempo-logger`](plugins/tempo-logger/README.zh-TW.md)
+
+依你說的工作內容填好 Tempo 工時表。
+
+<img alt="執行後 Tempo 週檢視的示意圖：五個工作日每天都在同一個工作項目上記了八小時" src="docs/tempo-logger/week-filled.png" width="720">
+
+安裝指令：
+
+```
+/plugin install tempo-logger@tundra
 ```

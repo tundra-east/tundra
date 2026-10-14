@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 98876cdefb3886133692c15bd55b8d59d98319a14dd0aa56c7eaa5a27bf6a621; see CLAUDE.md "Translations of the root README" before editing -->
+<!-- translated from README.md, source sha256 ce45d46a4bb8fa730113507da00434831633cd893ffcc897bb6a28bdfe87ea04; see the root CLAUDE.md "Translations" before editing -->
 # test-authoring
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
@@ -12,32 +12,26 @@
 <a id="plugin-structure"></a>
 ## Plugin 结构
 
-```
+```tree
 plugins/test-authoring/
-├── .claude-plugin/plugin.json              # plugin metadata
-├── README.md                               # this file
-├── skills/                                 # 6 plugin-bundled skills
-│   ├── setup-test-context/SKILL.md         # one-time repo profile (optional)
-│   ├── scan-test-gaps/SKILL.md
-│   ├── add-unit-test/SKILL.md
-│   ├── add-integration-test/SKILL.md
-│   ├── update-unit-test/SKILL.md
-│   └── update-integration-test/SKILL.md
-├── agents/                                 # 8 plugin-bundled subagents (flat, bare names)
-│   ├── add-{unit,integration}-test-agent.md
-│   ├── update-{unit,integration}-test-agent.md
-│   ├── verify-add-{unit,integration}-test-agent.md
-│   └── verify-update-{unit,integration}-test-agent.md
+├── .claude-plugin/plugin.json      plugin 的元数据
+├── CLAUDE.md                       维护这个 plugin 时的说明
+├── README.md                       这一页，以及它的翻译
+├── skills/                         六个 skill，各自有一份 SKILL.md，以及说明模型读了它之后必须做到什么的 evals/
+│   ├── setup-test-context/         为 repository 做一次概况分析，并缓存它的测试约定（可选）
+│   │   └── references/             概况如何分析、会写出什么
+│   ├── scan-test-gaps/             找出没有测试的代码和过时的测试，再交给编写者处理
+│   ├── add-unit-test/              为目标编写单元测试
+│   ├── add-integration-test/       为目标编写集成测试
+│   ├── update-unit-test/           审计已有的单元测试并更新
+│   └── update-integration-test/    审计已有的集成测试并更新
+├── agents/                         skill 会启动的编写者与验证者 subagent
 ├── resources/
-│   ├── templates/                          # the rule books; read from here, never copied per-repo
-│   │   ├── rules/                          # 8 .md
-│   │   └── shared/                         # scope-resolution.md
-│   └── static/                             # plugin-internal, never written per-repo
-│       └── status-legend.md                # controlled vocabulary, do not extend
-└── docs/                                   # detailed per-skill / per-agent / shared docs
-    ├── skills/{readme-*.md}                # one per skill
-    ├── agents/{readme-*.md}                # high-complexity update + verify-update agents
-    └── shared/{readme-*.md}                # cross-cutting concept primers
+│   ├── templates/                  skill 运行时直接从 plugin 读取，绝不复制到 repository
+│   │   ├── rules/                  编写者、验证者和 skill 遵守的规则书
+│   │   └── shared/                 每个 skill 共用的流程，例如范围解析
+│   └── static/status-legend.md     每份报告都使用的状态标签
+└── docs/                           较长的说明：每个 skill 一份、更新类 agent，以及共用概念
 ```
 
 **plugin 内置 vs 每个 repo 各自的**：`plugins/test-authoring/` 下的一切，包括 skill、agent、规则书和静态资源，都随 plugin 提供并直接从 plugin 读取，因此 plugin 一升级，就会同时作用于每个使用方 repo。唯一属于各个 repo 的文件，是 `setup-test-context` 通过分析生成的那一到两份约定文件；它们没有模板，因为它们正是为那些无法随 plugin 提供的内容而存在的。
@@ -49,11 +43,11 @@ plugins/test-authoring/
 
 当 `/test-authoring:setup-test-context` 在使用方的 repo 中运行时，它会写入一到两份文件，两者都由分析生成，不会复制或填写任何模板。它不会触碰那个目录以外的任何东西：忽略规则是一份范围限定的 `.claude/conventions/.gitignore`，内容是 `*`，与 `resolve-issue` 用于 `.claude/resolve/` 的做法相同。repo 根目录的 `.gitignore` 属于团队，从不被修改。
 
-```
+```tree
 .claude/
-└── conventions/tests/                  # repo-specific patterns, learned from the codebase
-    ├── project-architecture.md         # source/test layout, naming, mirroring, shared test project
-    └── common-verification-patterns.md # only if a qualifying pattern was detected
+└── conventions/tests/                     setup-test-context 从这个 repository 的测试学到的约定
+    ├── project-architecture.md            源代码与测试的布局、命名、对应方式、共用的测试项目
+    └── common-verification-patterns.md    只在找到符合条件的模式时才写出
 ```
 
 各测试类型的 `{type}-test-conventions.md` **不会** 被写入，plugin 也不再读取它们。编写者使用最近的相邻测试，它永远比缓存更及时；而一份没有任何东西会生成、却会被每个编写者信任的文件，是一个注入入口，而且因为路径被 gitignore，在审查中看不到。

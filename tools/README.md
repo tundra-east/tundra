@@ -3,7 +3,7 @@
 Pre-publish gates for the plugins in this repository. Standard library only, no `pip install`.
 
 ```
-python tools/pre_publish_check.py         # run the gates against the working tree
+python tools/pre_publish_check.py         # run the gates; versions sees committed work only
 python tools/run_tests.py                 # run every *_tests.py under a tests/ directory
 python tools/tests/pre_publish_check_tests.py   # known-answer cases for the gates
 ```
@@ -19,6 +19,7 @@ Every gate here replaced a prose instruction that someone had to remember and ru
 | `descriptions` | A skill or agent description over the Agent Skills specification's 1,024-character limit. Counted in characters, which is why this does not shell out to `skills-ref` — that validator reads the file with no encoding and counts bytes on a cp1252 Windows locale, inflating every em-dash into two phantom characters. |
 | `versions` | A plugin changed against the published tree but still carrying the version already published. The install cache is keyed by version, so that change reaches nobody while the push still looks successful. |
 | `leaks` | A URL host outside the allowlist, a GitHub account outside its own allowlist, a ticket-shaped token whose prefix is not a known placeholder, or an address that is neither a `noreply` form nor on a fixture domain the gate allows. This repository is public. |
+| `translations` | A translated README whose recorded source digest is not its README's, or whose code blocks, link targets, heading outline, table rows or language switcher differ from it. A Mermaid block is compared by its opening line, a ```tree block by its names. |
 
 ## How the gates are tested
 

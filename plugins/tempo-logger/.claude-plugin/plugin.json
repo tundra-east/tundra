@@ -1,0 +1,12 @@
+{
+  "name": "tempo-logger",
+  "description": "Query, suggest and write your own Tempo worklogs from natural language, with every proposed row shown for confirmation before anything is written",
+  "version": "0.1.0",
+  "repository": "https://github.com/tundra-east/tundra",
+  "homepage": "https://github.com/tundra-east/tundra/tree/main/plugins/tempo-logger",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "tundra-east",
+    "url": "https://github.com/tundra-east"
+  }
+}

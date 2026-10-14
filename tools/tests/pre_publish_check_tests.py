@@ -138,6 +138,33 @@ def mermaid_translation():
     return translation(source=MERMAID_SOURCE, table=TRANSLATED["table"] + "\n\n" + MERMAID_TRANSLATED)
 
 
+# the root README with a structure diagram after its table, and that diagram with its description column translated,
+# where the SKILL.md line has no description, so its name runs on through single spaces to the end of the line.
+TREE_BLOCK = (
+    "```tree\n"
+    "demo-plugin/\n"
+    "├── plugin.json      the manifest, read first\n"
+    "├── skills/          one folder per skill\n"
+    "│   └── SKILL.md, README.md\n"
+    "└── docs/            notes for maintainers\n"
+    "```"
+)
+TREE_SOURCE = README_SOURCE + "\n" + TREE_BLOCK + "\n"
+TREE_TRANSLATED = (
+    "```tree\n"
+    "demo-plugin/\n"
+    "├── plugin.json      plugin 的 manifest，最先讀取\n"
+    "├── skills/          每個 skill 一個資料夾\n"
+    "│   └── SKILL.md, README.md\n"
+    "└── docs/            給維護者的筆記\n"
+    "```"
+)
+
+
+def tree_translation(tree=TREE_TRANSLATED, source=TREE_SOURCE):
+    return translation(source=source, table=TRANSLATED["table"] + "\n\n" + tree)
+
+
 def translated_repo(source=README_SOURCE, zh_tw=None, zh_cn=None):
     files = {"README.md": source, "README.zh-TW.md": zh_tw if zh_tw is not None else translation(source)}
     if zh_cn is not False:
@@ -282,6 +309,54 @@ def main():
         case(tmp, "translation-mermaid-dropped", "translations",
              **translated_repo(source=MERMAID_SOURCE, zh_tw=translation(source=MERMAID_SOURCE),
                                zh_cn=mermaid_translation()))
+        # a structure diagram's description column is prose, so translating it keeps the translation current,
+        # while the names to its left are paths the reader types, so changing, dropping or moving one does not.
+        case(tmp, "translation-tree-descriptions-translated", None,
+             **translated_repo(source=TREE_SOURCE, zh_tw=tree_translation(), zh_cn=tree_translation()))
+        case(tmp, "translation-tree-name-changed", "translations",
+             **translated_repo(source=TREE_SOURCE,
+                               zh_tw=tree_translation(TREE_TRANSLATED.replace("plugin.json ", "外掛.json   ")),
+                               zh_cn=tree_translation()))
+        case(tmp, "translation-tree-entry-dropped", "translations",
+             **translated_repo(source=TREE_SOURCE,
+                               zh_tw=tree_translation(TREE_TRANSLATED.replace(
+                                   "├── plugin.json      plugin 的 manifest，最先讀取\n", "")),
+                               zh_cn=tree_translation()))
+        case(tmp, "translation-tree-entry-reordered", "translations",
+             **translated_repo(source=TREE_SOURCE,
+                               zh_tw=tree_translation(TREE_TRANSLATED.replace(
+                                   "├── plugin.json      plugin 的 manifest，最先讀取\n"
+                                   "├── skills/          每個 skill 一個資料夾\n"
+                                   "│   └── SKILL.md, README.md\n",
+                                   "├── skills/          每個 skill 一個資料夾\n"
+                                   "│   └── SKILL.md, README.md\n"
+                                   "├── plugin.json      plugin 的 manifest，最先讀取\n")),
+                               zh_cn=tree_translation()))
+        # the entry keeps its name and its description and only moves one level deeper,
+        # which a comparison of the names without their branch glyphs would never see.
+        case(tmp, "translation-tree-entry-renested", "translations",
+             **translated_repo(source=TREE_SOURCE,
+                               zh_tw=tree_translation(TREE_TRANSLATED.replace(
+                                   "└── docs/            給維護者的筆記", "│   └── docs/            給維護者的筆記")),
+                               zh_cn=tree_translation()))
+        # the changed name follows a single space, which a name cut at its first space would never see
+        case(tmp, "translation-tree-undescribed-name-changed", "translations",
+             **translated_repo(source=TREE_SOURCE,
+                               zh_tw=tree_translation(TREE_TRANSLATED.replace(
+                                   "SKILL.md, README.md", "SKILL.md, 讀我.md")),
+                               zh_cn=tree_translation()))
+        # only a block tagged tree has a description column,
+        # so the same diagram in an untagged block is compared in full like any other code block.
+        untagged = TREE_BLOCK.replace("```tree", "```", 1)
+        untagged_source = README_SOURCE + "\n" + untagged + "\n"
+        case(tmp, "translation-untagged-tree-unchanged", None,
+             **translated_repo(source=untagged_source, zh_tw=tree_translation(untagged, source=untagged_source),
+                               zh_cn=tree_translation(untagged, source=untagged_source)))
+        case(tmp, "translation-untagged-tree-description-translated", "translations",
+             **translated_repo(source=untagged_source,
+                               zh_tw=tree_translation(untagged.replace("one folder per skill", "每個 skill 一個資料夾"),
+                                                      source=untagged_source),
+                               zh_cn=tree_translation(untagged, source=untagged_source)))
         case(tmp, "translation-link-dropped", "translations",
              **translated_repo(zh_tw=translation(links="閱讀指南，然後 [安裝](#install)。")))
         case(tmp, "translation-heading-dropped", "translations",

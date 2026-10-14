@@ -17,33 +17,37 @@ After installing, run `/reload-plugins` to activate.
 
 ## Prerequisites
 
-The pipeline itself needs nothing installed beyond what its component skills reach for — the Atlassian MCP for the Jira anchor, and `az` or `gh` for the PR step. Those are listed in the [repository README](../../README.md#prerequisites) and each degrades with a voiced note when absent.
+The pipeline itself needs nothing installed beyond what its component skills reach for — the Atlassian MCP for the Jira anchor, and `az` or `gh` for the PR step. Those are listed in the [issue-to-pr README](../../docs/issue-to-pr/README.md#prerequisites) and each degrades with a voiced note when absent.
 
 One optional extra: `resolve-issue-dashboard` runs a local standard-library **Python** server (no `pip install`, no virtualenv), tested on 3.13 and 3.14 on Windows and Linux. `resolve-issue` offers to bring it up at the start of every interactive run, so this is the one prerequisite a run visibly touches — but it is genuinely optional. Without Python the dashboard declines to start and says so in one line, and the pipeline runs exactly as it would otherwise, because the dashboard only observes. Install with `winget install Python.Python.3.13` on Windows (per-user scope, no administrator needed), `brew install python` on macOS, or your distribution's package manager.
 
 ## Plugin structure
 
-```
+```tree
 plugins/issue-to-pr-pipeline/
-├── .claude-plugin/plugin.json     # metadata + dependencies
-├── README.md                      # this file
+├── .claude-plugin/plugin.json      plugin metadata, with its dependencies on the other three plugins
+├── CLAUDE.md                       notes for working on the plugin
+├── README.md                       this page
 ├── resources/
-│   └── resolve-issue-steps.json   # canonical pipeline step registry (shared by both skills)
+│   └── resolve-issue-steps.json    the pipeline's steps, shared by resolve-issue and its dashboard
 └── skills/
-    ├── resolve-issue/
-    │   ├── SKILL.md                # the orchestrator (lean spine)
-    │   ├── README.md               # flow diagram + governing rules
-    │   ├── PLANNING.md             # planning-cluster reference (disclosed on entry)
-    │   ├── REVIEW-PASSES.md        # review-cluster reference (disclosed on entry)
-    │   └── {ARCHIVING,DASHBOARD,GIT-HANDLING,LEARNINGS}.md   # branch-conditional refs
-    ├── resolve-issue-dashboard/    # read-only progress dashboard
-    │   ├── SKILL.md
-    │   ├── README.md
-    │   ├── scripts/                # serve_progress.py + parse_session.py (stdlib only)
-    │   └── assets/index.html       # self-contained dashboard
-    └── resolve-issue-learnings/    # harvest captured learnings into conventions
-        ├── SKILL.md
-        └── README.md
+    ├── resolve-issue/              the pipeline from a ticket to a pull request
+    │   ├── SKILL.md                what the model follows, step by step
+    │   ├── README.md               the flow and where it stops for you, with its translations
+    │   ├── PLANNING.md             detail the planning steps load when they start
+    │   ├── BUILD.md                detail the implement, test and pull request steps load when they start
+    │   ├── REVIEW-PASSES.md        detail the two review steps load when they start
+    │   ├── ARCHIVING.md            detail read only when a newer run supersedes one on the same ticket
+    │   ├── DASHBOARD.md            detail for bringing the dashboard up as a run starts
+    │   ├── GIT-HANDLING.md         why a run's handoff files are never committed
+    │   └── LEARNINGS.md            how learnings are loaded, captured and promoted across runs
+    ├── resolve-issue-dashboard/    a read-only page that shows a run as it happens
+    │   ├── SKILL.md, README.md
+    │   ├── scripts/                the local server and the transcript parser
+    │   ├── assets/index.html       the page itself
+    │   └── tests/                  checks on the parser and the server
+    └── resolve-issue-learnings/    turns what runs learned into conventions later runs follow
+        └── SKILL.md, README.md
 ```
 
 ## Skills

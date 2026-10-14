@@ -4,9 +4,11 @@ The root `README.md` is translated into Traditional Chinese (`README.zh-TW.md`) 
 
 ## Never translated
 
-Kept exactly as written in the English README: product and service names (Claude Code, GitHub, Azure DevOps, Atlassian, Jira, Python, SonarCloud), plugin, skill and subagent names (`disconfirm-first`, `resolve-issue`, …), slash commands, file and directory paths, command lines, every fenced code block (including the pipeline diagram, whose alignment CJK full-width characters would break), every link target, and the section icons and the English `<a id>` anchor above each section (links written against the English README must land in every language).
+Kept exactly as written in the English README: product and service names (Claude Code, GitHub, Azure DevOps, Atlassian, Jira, Python, SonarCloud), plugin, skill and subagent names (`disconfirm-first`, `resolve-issue`, …), slash commands, file and directory paths, command lines, every fenced code block (including the pipeline diagram, whose alignment CJK full-width characters would break) except a Mermaid diagram's labels and the description column of a block fenced as ```tree, which are translated in place, every link target, and the section icons and the English `<a id>` anchor above each section (links written against the English README must land in every language).
 
 These stay in English inside translated prose too, because they are what a reader types or searches for: plugin, skill, subagent, marketplace, hook, PR (and pull request), issue, story, repo, working tree, branch, remote, commit, push, pipeline, session, agent, badge, token, transcript, frontmatter, fixture.
+
+Tempo's own vocabulary stays in English as well: Tempo itself, account in Tempo's sense (a work attribute such as `200-17`, which is not the signed-in identity rendered as 帳號 / 账号 in the table below), and key in Jira key and account key. A Tempo or Jira UI label a step tells the reader to click, such as **Settings** or **+ New Token**, stays as the English UI and its screenshot show it, and so do a README's mock values, such as `ACME-182` and `200-17 · Widget Platform – Development`, including the work item names Development and Governance when prose or alt text refers to them.
 
 ## Rendered terms
 
@@ -52,6 +54,23 @@ These stay in English inside translated prose too, because they are what a reade
 | circuit breaker | 斷路器 | 熔断机制 |
 | consumer (repo) | 使用端 repo | 使用方 repo |
 | never (a hard rule) | 絕不 | 绝不 |
+| timesheet | 工時表 | 工时表 |
+| worklog | 工時紀錄 | 工时记录 |
+| work item (what a worklog is logged against) | 工作項目 | 工作项 |
+| entry, record (one worklog, as a count) | 一筆（紀錄） | 一条（记录） |
+| week view (Tempo's) | 週檢視 | 周视图 |
+| mock-up (a drawn, not captured, picture) | 示意圖 | 示意图 |
+| proposal (what plan.py renders for confirmation) | 提案 | 提案 |
+| say yes (to a proposal) | 說好 | 确认 |
+| write (to Tempo, noun and verb) | 寫入 | 写入 |
+| the only writer (the one script that writes) | 唯一的寫入者 | 唯一的写入者 |
+| endpoint | 端點 | 端点 |
+| work attribute (Tempo's) | 工作屬性 | 工作属性 |
+| account id (the signed-in identity) | 帳號 id | 账号 id |
+| span (of dates) | 期間 | 时间段 |
+| public holiday | 國定假日 | 法定节假日 |
+| live state | 即時狀態 | 实时状态 |
+| row (of a proposal) | 列 | 行 |
 
 ## How to translate
 

@@ -54,7 +54,8 @@ jobs:
         run: python tools/pre_publish_check.py
 
   # The test suites, including those of the Python that ships inside the plugins
-  # -- the dashboard, whoami and remind-me -- which nothing else runs automatically. Every observed consumer run has been Windows on 3.13, while CI had
+  # -- the dashboard, whoami, remind-me and tempo-logger -- which nothing else runs automatically.
+  # Every observed consumer run has been Windows on 3.13, while CI had
   # only ever been Linux on whatever '3.x' resolved to, so both axes are real.
   selfchecks:
     strategy:

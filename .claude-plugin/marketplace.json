@@ -1,6 +1,6 @@
 {
   "name": "tundra",
-  "description": "Claude Code plugins: the issue-to-PR toolkit of adversarial review, test authoring, PR lifecycle, and the pipeline that chains them, a self-assessment from your own commits, and what your sessions left open on a given day",
+  "description": "Claude Code plugins: the issue-to-PR toolkit of adversarial review, test authoring, PR lifecycle, and the pipeline that chains them, a self-assessment from your own commits, what your sessions left open on a given day, and your Tempo timesheet filled in from plain language",
   "owner": {
     "name": "tundra-east",
     "url": "https://github.com/tundra-east/tundra"
@@ -33,8 +33,13 @@
     },
     {
       "name": "remind-me",
-      "description": "What you left open in the Claude Code sessions you ran on a given day or over a range of days, grouped by repository and checked against the live state of every pull request and branch, with a way back into each session",
+      "description": "What you left open in the Claude Code sessions you ran on a given day or over a range of days, grouped by repository and checked against the live state of every pull request and branch, with a quick link back into each session",
       "source": "./plugins/remind-me"
+    },
+    {
+      "name": "tempo-logger",
+      "description": "Query, suggest and write your own Tempo worklogs from natural language, with every proposed row shown for confirmation before anything is written",
+      "source": "./plugins/tempo-logger"
     }
   ]
 }
