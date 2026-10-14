@@ -5,7 +5,7 @@
   <img alt="tundra, Claude Code plugins" src="docs/banner/banner-light.jpg">
 </picture>
 
-[![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-blue)](#install) [![License: Apache-2.0](https://img.shields.io/github/license/tundra-east/tundra)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/tundra-east/tundra/checks.yml?branch=main&label=CI)](https://github.com/tundra-east/tundra/actions/workflows/checks.yml) [![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-blue)](#install) [![License: Apache-2.0](https://img.shields.io/github/license/tundra-east/tundra)](LICENSE)
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 

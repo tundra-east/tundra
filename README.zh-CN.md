@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 99d146fe8b60a78a8d75d4e4f528be87de23319f1fb0b775b18bce5cbf865739; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 84680f79507ea25e48d21df6ff7788b33cb2dfd477a00723ea58b24ac6141b9b; see the root CLAUDE.md "Translations" before editing -->
 <div align="center">
 
 <picture>
@@ -6,7 +6,7 @@
   <img alt="tundra, Claude Code plugins" src="docs/banner/banner-light.jpg">
 </picture>
 
-[![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-blue)](#install) [![License: Apache-2.0](https://img.shields.io/github/license/tundra-east/tundra)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/tundra-east/tundra/checks.yml?branch=main&label=CI)](https://github.com/tundra-east/tundra/actions/workflows/checks.yml) [![Claude Code plugin marketplace](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-blue)](#install) [![License: Apache-2.0](https://img.shields.io/github/license/tundra-east/tundra)](LICENSE)
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 
