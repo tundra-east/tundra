@@ -41,7 +41,7 @@ Four plugins that take a ticket to a reviewed pull request, described in full in
 
 <img alt="The resolve-issue-dashboard following a run: the runs by repository, the pipeline's eleven steps as a ring, the token figures and each agent's tool calls" src="docs/issue-to-pr/dashboard.png" width="560">
 
-| Plugin | What it does |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Plugin&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | What it does |
 |---|---|
 | [`issue-to-pr-pipeline`](docs/issue-to-pr/README.md#issue-to-pr-pipeline) | Takes one ticket from diagnosis to a reviewed pull request, stopping for your approval of the plan and again before the PR opens |
 | [`disconfirm-first`](docs/issue-to-pr/README.md#disconfirm-first) | Adversarial review of an issue, a plan, or an implemented fix, before the next step builds on it |

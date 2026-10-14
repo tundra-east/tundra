@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 84680f79507ea25e48d21df6ff7788b33cb2dfd477a00723ea58b24ac6141b9b; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 f6aa4f1f326c44d1008c64c4b5158813eef0a8ff66551183b3e079233632236d; see the root CLAUDE.md "Translations" before editing -->
 <div align="center">
 
 <picture>
@@ -42,7 +42,7 @@
 
 <img alt="resolve-issue-dashboard 正在跟踪一次运行：按 repository 分组的运行列表、pipeline 的十一个步骤排成的环、token 统计，以及每个 agent 的工具调用" src="docs/issue-to-pr/dashboard.png" width="560">
 
-| Plugin | 做什么 |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Plugin&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | 做什么 |
 |---|---|
 | [`issue-to-pr-pipeline`](docs/issue-to-pr/README.zh-CN.md#issue-to-pr-pipeline) | 把一个工单从诊断带到经过审查的 pull request，批准计划前和创建 PR 前各停下来等你一次 |
 | [`disconfirm-first`](docs/issue-to-pr/README.zh-CN.md#disconfirm-first) | 在下一步以它为基础之前，对 issue、计划或已实现的修复进行对抗式审查 |
