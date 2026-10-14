@@ -33,10 +33,10 @@ Two exemptions are pinned by their own case, so a later tightening cannot quietl
 
 `ITPR_PUBLISHED_REF` names the already-published commit. It defaults to `origin/main`, which is right for a local run and for a pull request whose base is `main`. It is wrong on a push to `main`, because by then that ref points at the commit being pushed and the comparison reports nothing changed — so the workflow overrides it with the push's own before-SHA. `HEAD~1` is not a substitute: a push carrying several commits would hide any plugin changed in all but the last of them, which is the exact case the gate exists to catch.
 
-That is not reasoning alone — it was replayed. Checking out the three-commit push `dc0424e..155d0ab` and setting both manifests back to the version `dc0424e` published, so only the version gate could fire:
+That is not reasoning alone — it was replayed. Checking out the three-commit push `c9622dc..ef0562d` and setting both manifests back to the version `c9622dc` published, so only the version gate could fire:
 
 ```
-ITPR_PUBLISHED_REF=dc0424e   [FAIL] issue-to-pr-pipeline: changed ... but still at version 0.29.0
+ITPR_PUBLISHED_REF=c9622dc   [FAIL] issue-to-pr-pipeline: changed ... but still at version 0.29.0
 ITPR_PUBLISHED_REF=HEAD~1    [ok  ]
 ```
 
