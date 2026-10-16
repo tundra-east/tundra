@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 baaf88c3f4256355f515896834d40735dafa2de414a0ad623422bf861e584b8d; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 8b229bdab642a7b9ec70da025972f433ee2e325caae3ef17c1bee87ecb56d121; see the root CLAUDE.md "Translations" before editing -->
 # remind-me
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
@@ -23,7 +23,7 @@
 
 ## 使用方式
 
-用自己的話問，例如「我昨天留下了什麼沒做完？」，或執行 `/remind-me:remind-me`，可以加上日期或一段範圍，以及語言：`/remind-me:remind-me last Friday, in German` 或 `/remind-me:remind-me this week`。範圍最多 31 天，說得模糊時每次都用同一種算法：「這週」是週一到今天，「上週」是上週一到上週日。沒指定日期時，它會報告今天以前、最近一個你在互動 session 裡打過 prompt 的日子，所以週一執行會報告週五，只有 `claude -p` 執行紀錄的日子會被跳過。
+用自己的話問，例如「我昨天留下了什麼沒做完？」，或執行 `/remind-me:remind-me`，可以加上日期或一段範圍、repository，以及語言：`/remind-me:remind-me last Friday, in German`、`/remind-me:remind-me this week` 或 `/remind-me:remind-me this week in api and web`。repository 以它的資料夾名稱指定，「這個 repo」指的是 session 所在的那個；沒指定 repository 時涵蓋所有 repository。範圍最多 31 天，說得模糊時每次都用同一種算法：「這週」是週一到今天，「上週」是上週一到上週日。沒指定日期時，它會報告今天以前、最近一個你在互動 session 裡打過 prompt 的日子，所以週一執行會報告週五，只有 `claude -p` 執行紀錄的日子會被跳過；指定了 repository 時，則是那些 repository 裡最近一個這樣的日子。
 
 你會在 session 裡得到一份列出仍待處理事項的摘要，以及一個在瀏覽器打開的 HTML 頁面：所有 repository 的數字（包括 token 用量）、依 repository 排列的每個 session 時間軸，以及所有還沒做完的事，最新的在上。報告一段範圍時，時間軸一天一欄，概要列出每個 repository 最新的幾項並連到其餘的，每張卡片都能放大顯示全部。
 

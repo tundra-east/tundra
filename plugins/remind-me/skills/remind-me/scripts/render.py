@@ -330,7 +330,12 @@ def single(digest):
 
 
 def span_text(digest):
-    return digest["from"] if single(digest) else "%s – %s" % (digest["from"], digest["to"])
+    days = digest["from"] if single(digest) else "%s – %s" % (digest["from"], digest["to"])
+    if not digest.get("repositories_asked"):
+        return days
+    # a page asked for some repositories reads as the whole of those days unless it says which it kept,
+    # and the folder names are what a reader recognises, not the names or paths the request gave
+    return "%s · %s" % (days, ", ".join(name_of(group) for group in digest["repositories"]))
 
 
 def day_of(stamp):

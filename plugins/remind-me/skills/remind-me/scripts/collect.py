@@ -7,12 +7,14 @@ A transcript says what was pending when the session stopped, and the live state 
 because a pull request a session left in review is often merged the same afternoon.
 
 Usage:
-    python collect.py [--from YYYY-MM-DD [--to YYYY-MM-DD]] [--out digest.json] [--no-live]
+    python collect.py [--from YYYY-MM-DD [--to YYYY-MM-DD]] [--repo NAME_OR_PATH ...] [--out digest.json] [--no-live]
 
 Without --from, the range is the one most recent day before today with a prompt typed in an interactive session,
 so a Monday run reports the Friday before. Without --to, the range ends today.
 A range holds at most 31 days, both ends included.
-Exit status 3 means no session was active in the range.
+With --repo, only the sessions started in those repositories are kept, and the default day is the latest with work in them.
+Exit status 3 means no session was active in the range,
+and 4 that no session on record was started in a repository asked for.
 """
 
 import argparse
@@ -29,6 +31,7 @@ import urllib.parse
 
 EXIT_OK = 0
 EXIT_NO_SESSIONS = 3
+EXIT_NO_REPOSITORY = 4
 # a month of sessions is the most one report is built to hold, and Claude Code keeps 30 days of transcripts by default
 MAX_DAYS = 31
 
@@ -69,6 +72,7 @@ AZURE_REMOTE = (
     ("https://%s.visualstudio.com", re.compile(r"https://(?:[^@/]+@)?([\w-]+)\.visualstudio\.com/")),
 )
 LOOKUP_WORKERS = 8
+UNKNOWN_FOLDER = "(unknown folder)"
 USAGE_FIELDS = ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
 SHELL_TOOLS = ("Bash", "PowerShell")
 
@@ -516,10 +520,71 @@ def span_days(first, last):
     return {(start + datetime.timedelta(days=n)).isoformat() for n in range((end - start).days + 1)}
 
 
-def collect(first=None, last=None, live=True, root=None, today=None):
+class UnknownRepository(Exception):
+    """A requested repository no transcript was started in, with the folders the transcripts were started in."""
+
+    def __init__(self, unknown, seen):
+        super().__init__(", ".join(unknown))
+        self.unknown, self.seen = unknown, seen
+
+
+def start_folder(path):
+    """The folder a transcript's session started in, read as read_session reads it but without reading on."""
+    with open(openable(path), encoding="utf-8", errors="replace") as handle:
+        for line in handle:
+            if '"cwd"' not in line:
+                continue
+            try:
+                cwd = json.loads(line).get("cwd")
+            except (ValueError, AttributeError):
+                continue
+            if cwd:
+                return cwd
+    return None
+
+
+def folder_of(cwd, known):
+    """The group a session's folder lands in, as (key, is_repository): its main working tree, or else the folder itself."""
+    if cwd not in known:
+        repository = repository_root(cwd)
+        known[cwd] = (repository or cwd or UNKNOWN_FOLDER, bool(repository))
+    return known[cwd]
+
+
+def selector(value):
+    """A requested repository as ("path", folder) when it is a path, or ("name", folder name) when it is a bare name.
+
+    A bare name is matched by the folder's own name and never looked up on disk,
+    since a subfolder of here that happens to share it would otherwise win.
+    """
+    if value in (".", "..") or os.path.isabs(value) or "/" in value or "\\" in value:
+        full = os.path.abspath(value)
+        return "path", os.path.normcase(repository_root(full) or os.path.normpath(full))
+    return "name", value.lower()
+
+
+def selects(key, chosen):
+    kind, wanted = chosen
+    if kind == "path":
+        return os.path.normcase(os.path.normpath(key)) == wanted
+    return os.path.basename(key.rstrip("\\/")).lower() == wanted
+
+
+def collect(first=None, last=None, live=True, root=None, today=None, repositories=None):
     root = root or os.path.join(config_dir(), "projects")
     paths = transcripts(root)
     today = today or datetime.date.today().isoformat()
+    known = {}
+    chosen = [(value, selector(value)) for value in repositories or []]
+    if chosen:
+        folders = {path: folder_of(start_folder(path), known)[0] for path in paths}
+        seen = sorted(set(folders.values()))
+        # a misspelt name would otherwise read exactly like a repository with no sessions on those days
+        unknown = [value for value, one in chosen if not any(selects(key, one) for key in seen)]
+        if unknown:
+            raise UnknownRepository(unknown, seen)
+        # filtered before the default day is chosen, so that day is the latest with work in the repositories asked for
+        paths = [path for path in paths if any(selects(folders[path], one) for _, one in chosen)]
     if not first:
         first = last = default_day(paths, today)
     elif not last:
@@ -527,6 +592,10 @@ def collect(first=None, last=None, live=True, root=None, today=None):
     digest = {"from": first, "to": last, "earliest": None,
               "generated": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
               "left_out": {"headless": 0}, "repositories": [], "pull_requests": {}}
+    if chosen:
+        digest["repositories_asked"] = [value for value, _ in chosen]
+        # every one is missing until a session is kept, which is the answer when no day had work in any of them
+        digest["repositories_missing"] = list(digest["repositories_asked"])
     if not first:
         return digest
     days = span_days(first, last)
@@ -551,10 +620,11 @@ def collect(first=None, last=None, live=True, root=None, today=None):
         # the entrypoint only decides what is left out, so it is not part of what the model reads
         del session["entrypoint"]
         session["running"] = running.get(session["id"])
-        repository = repository_root(session["cwd"])
-        key = repository or session["cwd"] or "(unknown folder)"
-        group = groups.setdefault(key, {"path": key, "is_repository": bool(repository), "current": False, "sessions": []})
+        key, is_repository = folder_of(session["cwd"], known)
+        group = groups.setdefault(key, {"path": key, "is_repository": is_repository, "current": False, "sessions": []})
         group["sessions"].append(session)
+    if chosen:
+        digest["repositories_missing"] = [value for value, one in chosen if not any(selects(key, one) for key in groups)]
     here = repository_root(os.getcwd()) or os.getcwd()
     if here in groups:
         # the repository this report is asked from: a resume there would land in the session already running
@@ -647,8 +717,11 @@ def local_day(parser, flag, value):
 
 def describe(digest):
     if not digest["from"]:
-        return "any day before today"
-    return digest["from"] if digest["from"] == digest["to"] else "%s to %s" % (digest["from"], digest["to"])
+        days = "any day before today"
+    else:
+        days = digest["from"] if digest["from"] == digest["to"] else "%s to %s" % (digest["from"], digest["to"])
+    asked = digest.get("repositories_asked")
+    return "%s in %s" % (days, ", ".join(asked)) if asked else days
 
 
 def main(argv=None, today=None):
@@ -658,6 +731,8 @@ def main(argv=None, today=None):
     parser.add_argument("--out", help="write the digest here instead of stdout")
     parser.add_argument("--no-live", action="store_true", help="skip git and pull request lookups")
     parser.add_argument("--split", help="also write one digest per repository into this folder")
+    parser.add_argument("--repo", dest="repositories", action="append", metavar="NAME_OR_PATH",
+                        help="keep only this repository, by its folder's name or by a path inside it; repeat for several")
     args = parser.parse_args(argv)
     if args.split and not args.out:
         parser.error("--split needs --out")
@@ -674,7 +749,13 @@ def main(argv=None, today=None):
         if (last - first).days + 1 > MAX_DAYS:
             parser.error("a range holds at most %d days, both ends included" % MAX_DAYS)
         args.first, args.last = first.isoformat(), last.isoformat()
-    digest = collect(args.first, args.last, live=not args.no_live, today=today.isoformat())
+    try:
+        digest = collect(args.first, args.last, live=not args.no_live, today=today.isoformat(), repositories=args.repositories)
+    except UnknownRepository as error:
+        names = sorted({os.path.basename(key.rstrip("\\/")) or key for key in error.seen if key != UNKNOWN_FOLDER}, key=str.lower)
+        print("no session was started in a repository named %s; the sessions on record were started in: %s"
+              % (", ".join(error.unknown), ", ".join(names) or "nothing"), file=sys.stderr)
+        return EXIT_NO_REPOSITORY
     if args.split:
         # named before the whole digest is written, so it carries the same names as the split folder
         name_splits(digest)
@@ -695,6 +776,8 @@ def main(argv=None, today=None):
     if not digest["repositories"]:
         print("no sessions on %s" % describe(digest), file=sys.stderr)
         return EXIT_NO_SESSIONS
+    for value in digest.get("repositories_missing", []):
+        print("no sessions in %s on those days" % value, file=sys.stderr)
     return EXIT_OK
 
 
