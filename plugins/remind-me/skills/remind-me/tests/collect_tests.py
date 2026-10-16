@@ -1312,6 +1312,219 @@ def test_collect_live_pull_requests_new_range():
           digest["repositories"][0]["sessions"][0]["pull_requests_new"], ["azure:3001", "azure:3002"])
 
 
+# ----- the repository filter: start_folder, folder_of, selector, selects ----------
+
+def _named_repo(name):
+    """A repository whose folder has this name, since a bare name is matched against the folder's own name."""
+    path = os.path.join(_tempdir(), name)
+    os.makedirs(path)
+    _git(path, "init", "-q", "-b", "main")
+    _git(path, "commit", "-q", "--allow-empty", "-m", "first")
+    return path
+
+
+def test_start_folder():
+    first = os.path.join(FOLDER, "first")
+    second = os.path.join(FOLDER, "second")
+    root = _projects({
+        "proj/lead.jsonl": [{"type": "summary", "summary": "an earlier conversation"},
+                            _user("no folder yet", at="09:00", cwd=None),
+                            _user("empty folder", at="09:30", cwd=""),
+                            _user("fix the build", at="10:00", cwd=first),
+                            _user("and the tests", at="11:00", cwd=second)],
+        "proj/resumed.jsonl": [_user("thursday", day=PREV, cwd=first), _user("friday", cwd=second)],
+        "proj/broken.jsonl": ['{"type":"user","cwd":"elsewhere",broken', '["cwd"]', _user("fix the build", cwd=second)],
+        "proj/none.jsonl": [{"type": "summary", "summary": "no folder"}, _user("no folder", cwd=None)],
+        "proj/empty.jsonl": [],
+    })
+
+    def path(name):
+        return os.path.join(root, "proj", name + ".jsonl")
+
+    check("leading entries without a cwd or with an empty one are skipped", cl.start_folder(path("lead")), first)
+    check("a session resumed on a later day keeps the folder of its first entry", cl.start_folder(path("resumed")), first)
+    check("a malformed line and a line that is not an object are skipped", cl.start_folder(path("broken")), second)
+    check("no entry with a cwd is None", cl.start_folder(path("none")), None)
+    check("an empty transcript is None", cl.start_folder(path("empty")), None)
+    # the filter and the grouping each read one folder per transcript, so they must agree on which one it is
+    check("the folder start_folder reads is the one read_session reads",
+          [cl.start_folder(path(name)) for name in ("lead", "resumed")],
+          [cl.read_session(path(name), {PREV, DAY})["cwd"] for name in ("lead", "resumed")])
+
+
+def test_folder_of():
+    main_repo = _repo()
+    sub = os.path.join(main_repo, "sub")
+    os.makedirs(sub)
+    worktree = os.path.join(_tempdir(), "wt")
+    _git(main_repo, "worktree", "add", "-q", worktree, "-b", "feature")
+    gone = os.path.join(FOLDER, "gone")
+    known = {}
+    check("a repository's subfolder is its main working tree", cl.folder_of(sub, known), (_toplevel(main_repo), True))
+    check("a worktree groups with its main working tree", cl.folder_of(worktree, known), (_toplevel(main_repo), True))
+    check("a folder outside any repository is the folder itself", cl.folder_of(FOLDER, known), (FOLDER, False))
+    check("a folder that no longer exists is the folder itself", cl.folder_of(gone, known), (gone, False))
+    check("no folder is the unknown folder", cl.folder_of(None, known), ("(unknown folder)", False))
+    check("an empty folder is the unknown folder", cl.folder_of("", known), ("(unknown folder)", False))
+    check("every folder asked about is kept in the dict passed", set(known), {sub, worktree, FOLDER, gone, None, ""})
+    # a folder already seen is answered from the dict, so git is not asked about it again
+    check("a folder already in the dict is answered from it", cl.folder_of(FOLDER, {FOLDER: ("cached", True)}),
+          ("cached", True))
+
+
+def test_selector():
+    repo = _repo()
+    deeper = os.path.join(repo, "sub", "deeper")
+    os.makedirs(deeper)
+    worktree = os.path.join(_tempdir(), "wt")
+    _git(repo, "worktree", "add", "-q", worktree, "-b", "feature")
+    root = os.path.normcase(_toplevel(repo))
+    # a repository right under the folder the selector is asked from, sharing the bare name asked for
+    here = _tempdir()
+    decoy = os.path.join(here, "decoy")
+    os.makedirs(decoy)
+    _git(decoy, "init", "-q", "-b", "main")
+    outside = os.path.join(FOLDER, "outside")
+    os.makedirs(outside, exist_ok=True)
+    saved = os.getcwd()
+    try:
+        os.chdir(here)
+        check("a bare name is a name, lower-cased", cl.selector("Widgets"), ("name", "widgets"))
+        check("a bare name shared by a repository under the current folder is still a name", cl.selector("decoy"),
+              ("name", "decoy"))
+        os.chdir(deeper)
+        check(". is the current folder's repository", cl.selector("."), ("path", root))
+        check(".. is the parent folder's repository", cl.selector(".."), ("path", root))
+        os.chdir(outside)
+        check(". outside any repository is the folder itself", cl.selector("."), ("path", os.path.normcase(outside)))
+        check(".. outside any repository is the parent folder", cl.selector(".."), ("path", os.path.normcase(FOLDER)))
+        check("a relative path with / is resolved from the current folder", cl.selector("x/y"),
+              ("path", os.path.normcase(os.path.join(outside, "x", "y"))))
+        check("a relative path with a backslash is a path", cl.selector("x\\y")[0], "path")
+    finally:
+        os.chdir(saved)
+    check("an absolute path inside a repository is the repository's root", cl.selector(deeper), ("path", root))
+    check("an absolute path to a worktree is its main working tree", cl.selector(worktree), ("path", root))
+    check("an absolute path outside any repository is normalised", cl.selector(os.path.join(outside, ".", "x", "..")),
+          ("path", os.path.normcase(outside)))
+
+
+def test_selects():
+    key = os.path.join(FOLDER, "Widgets")
+    path = ("path", os.path.normcase(key))
+    check("a name matches the folder's own name ignoring case", cl.selects(key, ("name", "widgets")), True)
+    check("a name matches a key ending in a separator", cl.selects(key + "/", ("name", "widgets")), True)
+    check("a name matches a key ending in a backslash", cl.selects(key + "\\", ("name", "widgets")), True)
+    check("a name does not match a parent folder's name",
+          cl.selects(key, ("name", os.path.basename(FOLDER).lower())), False)
+    check("a name does not match a longer folder name", cl.selects(key + "-old", ("name", "widgets")), False)
+    check("a path matches the key it names", cl.selects(key, path), True)
+    check("a path matches the key spelt with redundant parts", cl.selects(os.path.join(FOLDER, "x", "..", "Widgets"), path),
+          True)
+    check("a path does not match another folder of the same name",
+          cl.selects(os.path.join(FOLDER, "other", "Widgets"), path), False)
+    check("a path does not match the unknown folder", cl.selects("(unknown folder)", path), False)
+
+
+# ----- collect with repositories: only the sessions started in them --------------
+
+def test_collect_repositories():
+    alpha, beta = _named_repo("Alpha"), _named_repo("beta")
+    worktree = os.path.join(_tempdir(), "wt")
+    _git(alpha, "worktree", "add", "-q", worktree, "-b", "feature")
+    beta_sub = os.path.join(beta, "sub")
+    os.makedirs(beta_sub)
+    files = {"proj/a1.jsonl": [_user("alpha", cwd=alpha)],
+             "proj/a2.jsonl": [_user("alpha worktree", at="11:00", cwd=worktree)],
+             "proj/b1.jsonl": [_user("beta", cwd=beta_sub)],
+             "proj/f1.jsonl": [_user("no repository")]}
+    in_alpha = (_toplevel(alpha), True, False, ["a1", "a2"])
+    in_beta = (_toplevel(beta), True, False, ["b1"])
+    digest = _collect(files, live=False, today=TODAY, repositories=["alpha"])
+    check("a name keeps only its repository's sessions, its worktree's with them, ignoring case", _summary(digest),
+          [in_alpha])
+    check("the digest records the name asked for and nothing missing",
+          (digest["repositories_asked"], digest["repositories_missing"]), (["alpha"], []))
+    digest = _collect(files, live=False, today=TODAY, repositories=[beta_sub])
+    check("a path inside a repository keeps that repository's sessions", _summary(digest), [in_beta])
+    digest = _collect(files, live=False, today=TODAY, repositories=[FOLDER])
+    check("a path outside any repository keeps the sessions started in that folder", _summary(digest),
+          [(FOLDER, False, False, ["f1"])])
+    digest = _collect(files, live=False, today=TODAY, repositories=["ALPHA", beta])
+    check("several repositories keep the sessions of each", sorted(_summary(digest)), sorted([in_alpha, in_beta]))
+    check("the values asked for are recorded as given", digest["repositories_asked"], ["ALPHA", beta])
+
+
+def test_collect_repositories_name_not_looked_up():
+    here = _tempdir()
+    decoy = os.path.join(here, "widgets")
+    os.makedirs(decoy)
+    _git(decoy, "init", "-q", "-b", "main")
+    widgets = _named_repo("widgets")
+    # looked up on disk, the name would be the decoy under here, which no transcript was started in
+    digest = _collect({"proj/w1.jsonl": [_user("work", cwd=widgets)]}, here=here, live=False, today=TODAY,
+                      repositories=["widgets"])
+    check("a bare name matches folders by name, not the same-named repository under the current folder",
+          _summary(digest), [(_toplevel(widgets), True, False, ["w1"])])
+
+
+def test_collect_repositories_default_day():
+    alpha, beta = _named_repo("alpha"), _named_repo("beta")
+    files = {"proj/a1.jsonl": [_user("thursday", day=PREV, cwd=alpha)], "proj/b1.jsonl": [_user("friday", cwd=beta)]}
+    digest = _collect(files, day=None, live=False, today=TODAY)
+    check("fixture: without repositories the default day is beta's later day", digest["from"], DAY)
+    digest = _collect(files, day=None, live=False, today=TODAY, repositories=["alpha"])
+    check("the default day is the latest with work in the repository asked for",
+          (digest["from"], digest["to"], _summary(digest)), (PREV, PREV, [(_toplevel(alpha), True, False, ["a1"])]))
+    files = {"proj/a1.jsonl": [_user("monday", day=TODAY, cwd=alpha)], "proj/b1.jsonl": [_user("friday", cwd=beta)]}
+    digest = _collect(files, day=None, live=False, today=TODAY, repositories=["alpha"])
+    check("no work day before today in the repository asked for: no day, even with work elsewhere, and it is missing",
+          (digest["from"], digest["to"], digest["repositories"], digest["repositories_missing"]),
+          (None, None, [], ["alpha"]))
+
+
+def test_collect_repositories_missing():
+    alpha, beta = _named_repo("alpha"), _named_repo("beta")
+    files = {"proj/a1.jsonl": [_user("thursday", day=PREV, cwd=alpha)], "proj/b1.jsonl": [_user("friday", cwd=beta)]}
+    digest = _collect(files, live=False, today=TODAY, repositories=["ALPHA", beta])
+    check("a repository with no session on the day leaves the other's sessions",
+          _summary(digest), [(_toplevel(beta), True, False, ["b1"])])
+    check("the repository with no session in the range is missing, as given", digest["repositories_missing"], ["ALPHA"])
+    digest = _collect(files, live=False, today=TODAY, repositories=["alpha"])
+    # a session on record outside the range makes the name known, so it is missing rather than unknown
+    check("only a quiet repository asked for: nothing reported, it is missing",
+          (digest["repositories"], digest["repositories_missing"]), ([], ["alpha"]))
+
+
+def test_collect_no_repositories():
+    files = {"proj/s1.jsonl": [_user("go")]}
+    digest = _collect(files, live=False, today=TODAY)
+    check("without repositories the digest names none asked or missing",
+          ("repositories_asked" in digest, "repositories_missing" in digest), (False, False))
+    digest = _collect(files, live=False, today=TODAY, repositories=[])
+    check("an empty list is no filter", (_summary(digest), "repositories_asked" in digest, "repositories_missing" in digest),
+          ([(FOLDER, False, False, ["s1"])], False, False))
+
+
+def test_collect_unknown_repository():
+    alpha = _named_repo("alpha")
+    nowhere = os.path.join(FOLDER, "nowhere")
+    files = {"proj/a1.jsonl": [_user("thursday", day=PREV, cwd=alpha)], "proj/f1.jsonl": [_user("friday")],
+             "proj/u1.jsonl": [_user("no folder", cwd=None)]}
+    try:
+        _collect(files, live=False, today=TODAY, repositories=["alpha", "gamma", nowhere])
+        raised = None
+    except cl.UnknownRepository as error:
+        raised = error
+    check("a value no transcript was started in raises UnknownRepository", isinstance(raised, cl.UnknownRepository), True)
+    check("unknown holds the values matching no transcript's folder, as given", getattr(raised, "unknown", None),
+          ["gamma", nowhere])
+    # alpha's only session is outside the range, and it still counts as on record
+    check("seen holds every transcript's folder, sorted, the unknown folder included", getattr(raised, "seen", None),
+          sorted([_toplevel(alpha), FOLDER, "(unknown folder)"]))
+    check("the message names the unknown values", str(raised), "gamma, " + nowhere)
+
+
 # ----- azure_organisation ---------------------------------------------------------
 
 def test_azure_organisation():
@@ -1882,6 +2095,115 @@ def test_main_no_split_no_names():
           [("split" in g, len(g["sessions"])) for g in doc["repositories"]], [(False, 1)])
 
 
+# ----- main --repo, and describe ---------------------------------------------------
+
+def test_describe():
+    check("one day is the day", cl.describe({"from": DAY, "to": DAY}), DAY)
+    check("a range is both ends", cl.describe({"from": PREV, "to": DAY}), PREV + " to " + DAY)
+    check("no day is any day before today", cl.describe({"from": None, "to": None}), "any day before today")
+    check("the repositories asked for follow the days",
+          cl.describe({"from": DAY, "to": DAY, "repositories_asked": ["alpha", "Beta"]}), DAY + " in alpha, Beta")
+    check("the repositories asked for follow no day too",
+          cl.describe({"from": None, "to": None, "repositories_asked": ["alpha"]}), "any day before today in alpha")
+    check("an empty list asked for adds nothing", cl.describe({"from": DAY, "to": DAY, "repositories_asked": []}), DAY)
+
+
+def _main_projects(files, argv):
+    """Run main over a config dir holding these transcripts, today the Monday after DAY and nothing looked up live."""
+    config = _tempdir()
+    os.rename(_projects(files), os.path.join(config, "projects"))
+    os.environ["CLAUDE_CONFIG_DIR"] = config
+    try:
+        return _main(argv + ["--no-live"], today=datetime.date.fromisoformat(TODAY))
+    finally:
+        os.environ["CLAUDE_CONFIG_DIR"] = CONFIG
+
+
+def _alpha_beta():
+    """Two folders named alpha and Beta, so a case-sensitive sort would put Beta first."""
+    parent = _tempdir()
+    alpha, beta = os.path.join(parent, "alpha"), os.path.join(parent, "Beta")
+    os.makedirs(alpha)
+    os.makedirs(beta)
+    return alpha, beta
+
+
+def test_main_repo():
+    alpha, beta = _alpha_beta()
+    files = {"proj/a.jsonl": [_user("alpha work", cwd=alpha)], "proj/b.jsonl": [_user("beta work", cwd=beta)],
+             "proj/c.jsonl": [_user("elsewhere")]}
+    code, out, err = _main_projects(files, ["--from", DAY, "--to", DAY, "--repo", "alpha", "--repo", "beta"])
+    doc = json.loads(out) if out.startswith("{") else {}
+    check("--repo twice exits 0 with nothing on stderr", (code, err), (0, ""))
+    check("--repo is repeatable, the sessions of each kept and no others",
+          sorted(g["path"] for g in doc.get("repositories", [])), sorted([alpha, beta]))
+    check("the digest records the values as given", doc.get("repositories_asked"), ["alpha", "beta"])
+
+    path = os.path.join(_tempdir(), "out", "digest.json")
+    code, out, err = _main_projects(files, ["--from", PREV, "--to", DAY, "--repo", "alpha", "--out", path])
+    check("--repo with --out exits 0 with nothing on stderr", (code, err), (0, ""))
+    check("the progress line names the days in the repository asked for",
+          out.startswith("%s to %s in alpha: 1 sessions in 1 folders, 0 headless runs left out, " % (PREV, DAY)), True)
+
+
+def test_main_repo_unknown():
+    alpha, beta = _alpha_beta()
+    files = {"proj/a.jsonl": [_user("alpha work", cwd=alpha)], "proj/b.jsonl": [_user("thursday", day=PREV, cwd=beta)],
+             "proj/u.jsonl": [_user("no folder", cwd=None)]}
+    path = os.path.join(_tempdir(), "out", "digest.json")
+    code, out, err = _main_projects(files, ["--from", DAY, "--to", DAY, "--repo", "gamma", "--repo", "alpha",
+                                            "--repo", "delta", "--out", path])
+    check("EXIT_NO_REPOSITORY", cl.EXIT_NO_REPOSITORY, 4)
+    check("an unknown --repo exits 4", code, 4)
+    check("an unknown --repo prints and writes no digest", (out, os.path.exists(path)), ("", False))
+    check("stderr names the unknown values, then the folder names on record ignoring case, the unknown folder left out",
+          err, "no session was started in a repository named gamma, delta;"
+               " the sessions on record were started in: alpha, Beta\n")
+
+    code, out, err = _main_projects({"proj/u.jsonl": [_user("no folder", cwd=None)]}, ["--repo", "gamma"])
+    check("only the unknown folder on record: exits 4 with no digest", (code, out), (4, ""))
+    check("only the unknown folder on record: stderr lists nothing on record", err,
+          "no session was started in a repository named gamma; the sessions on record were started in: nothing\n")
+
+
+def test_main_repo_missing():
+    alpha, beta = _alpha_beta()
+    files = {"proj/a.jsonl": [_user("alpha work", cwd=alpha)], "proj/b.jsonl": [_user("thursday", day=PREV, cwd=beta)]}
+    code, out, err = _main_projects(files, ["--from", DAY, "--to", DAY, "--repo", "alpha", "--repo", "Beta"])
+    doc = json.loads(out) if out.startswith("{") else {}
+    check("a named repository with no sessions while another has some exits 0", code, 0)
+    check("stderr names the repository with no sessions on those days", err, "no sessions in Beta on those days\n")
+    check("the digest holds the other's sessions and names the missing one",
+          ([s["id"] for g in doc.get("repositories", []) for s in g["sessions"]], doc.get("repositories_missing")),
+          (["a"], ["Beta"]))
+
+
+def test_main_repo_no_sessions():
+    alpha, beta = _alpha_beta()
+    files = {"proj/a.jsonl": [_user("thursday", day=PREV, cwd=alpha)],
+             "proj/b.jsonl": [_user("thursday", day=PREV, cwd=beta)]}
+    code, out, err = _main_projects(files, ["--from", DAY, "--to", DAY, "--repo", "Beta", "--repo", "alpha"])
+    check("no session in the repositories asked for exits 3", code, 3)
+    check("stderr names the day in the repositories asked for, and nothing more", err,
+          "no sessions on %s in Beta, alpha\n" % DAY)
+
+    path = os.path.join(_tempdir(), "out", "digest.json")
+    code, out, err = _main_projects(files, ["--from", DAY, "--to", DAY, "--repo", "alpha", "--out", path])
+    check("with --out: exits 3", code, 3)
+    check("with --out: the progress line names the day in the repository asked for",
+          out.startswith("%s in alpha: 0 sessions in 0 folders, 0 headless runs left out, " % DAY), True)
+    check("with --out: stderr names the day in the repository asked for", err, "no sessions on %s in alpha\n" % DAY)
+
+    files = {"proj/a.jsonl": [_user("monday", day=TODAY, cwd=alpha)], "proj/b.jsonl": [_user("friday", cwd=beta)]}
+    code, out, err = _main_projects(files, ["--repo", "alpha"])
+    doc = json.loads(out) if out.startswith("{") else {}
+    check("no work day before today in the repository asked for exits 3", code, 3)
+    check("stderr says any day before today in the repository asked for", err,
+          "no sessions on any day before today in alpha\n")
+    check("no work day before today: the digest names the repository asked for as missing",
+          doc.get("repositories_missing"), ["alpha"])
+
+
 def test_non_ascii_on_cp1252_console():
     text = "\u7e41\u9ad4\u4e2d\u6587 prompt"
     config = _tempdir()
@@ -2088,6 +2410,11 @@ _TESTS = (test_isolation, test_local_time, test_days_in, test_default_day, test_
           test_split, test_main_split_needs_out, test_main_split, test_main_split_no_sessions,
           test_name_splits, test_name_splits_suffix_collision, test_main_split_names_shared,
           test_main_split_repeated_names, test_main_no_split_no_names,
+          test_start_folder, test_folder_of, test_selector, test_selects,
+          test_collect_repositories, test_collect_repositories_name_not_looked_up,
+          test_collect_repositories_default_day, test_collect_repositories_missing, test_collect_no_repositories,
+          test_collect_unknown_repository,
+          test_describe, test_main_repo, test_main_repo_unknown, test_main_repo_missing, test_main_repo_no_sessions,
           test_openable, test_openable_used_by_readers, test_subagent_usage_listed, test_long_path_transcript,
           test_no_cli_escaped)
 

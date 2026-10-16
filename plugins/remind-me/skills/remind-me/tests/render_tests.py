@@ -1584,6 +1584,37 @@ def test_single_and_span_text():
     check("a range reads as both ends around a spaced en dash", render.span_text(_range_digest()), "2026-10-02 \u2013 2026-10-08")
 
 
+def test_span_text_names_the_repositories_kept():
+    check("an empty list of repositories asked leaves one day as its date",
+          render.span_text(_digest(repositories_asked=[])), "2026-10-05")
+    check("an empty list of repositories asked leaves a range as its two ends",
+          render.span_text(dict(_range_digest(), repositories_asked=[])), _SPAN)
+    # asked as "." is the case where echoing the request would read as a dot, so only the kept folder's name passes
+    check("one day asked for as . names the kept folder",
+          render.span_text(_digest(repositories_asked=["."])), "2026-10-05 \u00b7 repo-a")
+    # asked in the reverse of the digest's order, and as a path with a trailing separator,
+    # so neither the request's order nor its spelling can pass for the folder names
+    asked = [_folder("repo-b") + os.sep, "repo-a"]
+    check("a range names the kept folders in the digest's order",
+          render.span_text(dict(_range_digest(), repositories_asked=asked)), _SPAN + " \u00b7 repo-a, repo-b")
+    # repo-z had no session in the range, so the collector kept no group for it
+    check("a repository asked for but not kept is not named",
+          render.span_text(_digest(repositories_asked=["repo-a", "repo-z"])), "2026-10-05 \u00b7 repo-a")
+
+
+def test_span_text_with_repositories_asked_reaches_the_page_and_summary():
+    digest = _digest(repositories_asked=["."])
+    want = "2026-10-05 \u00b7 repo-a"
+    page = render.page(_report(), digest)
+    eyebrow = re.search(r'<span class="eyebrow">%s(.*?)</span>' % _ICON, _head(_panel(page, "p-"))).group(1)
+    check("the overview's eyebrow carries the kept folder's name", eyebrow, "[level_day] \u00b7 " + want)
+    side = page[page.index('<aside class="card side">'):page.index("</aside>")]
+    check("the side panel's day carries the kept folder's name", re.search(r'<div class="day">([^<]*)</div>', side).group(1), want)
+    figures_line = render.summary(_report(), digest, "x.html").splitlines()[2]
+    check("the summary's figures line opens with the kept folder's name",
+          figures_line, want + " \u00b7 1 [sessions] \u00b7 1 [repositories] \u00b7 15 [tokens]")
+
+
 def test_clock_and_minutes():
     # by hand: 9 * 60 + 30
     check("clock is minutes past midnight", render.clock("2026-10-05 09:30"), 570)
@@ -2519,7 +2550,8 @@ _TESTS = (test_valid_report_has_no_problems, test_missing_top_level_fields, test
           test_range_overview_happened_chip_shows_the_whole_date,
           test_slugs, test_panel_keys, test_running_count_chip, test_summary_excludes_what_happened,
           test_fill_and_length, test_session_position, test_badge,
-          test_range_report_fields, test_single_and_span_text, test_clock_and_minutes, test_shown_and_stamp_html,
+          test_range_report_fields, test_single_and_span_text, test_span_text_names_the_repositories_kept,
+          test_span_text_with_repositories_asked_reaches_the_page_and_summary, test_clock_and_minutes, test_shown_and_stamp_html,
           test_length_across_days, test_day_axis, test_day_axis_reads_days, test_position, test_rows_for_on_a_range,
           test_range_timeline_markup, test_one_day_timeline_markup, test_range_text_and_attributes, test_range_headings,
           test_one_day_heading, test_level_range_required, test_schema_lists_every_label,
