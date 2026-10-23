@@ -105,7 +105,7 @@ Then update the header and the embedded facts.
 
 ## 8. Check it against the sources
 
-The page is checked by someone who did not write it. Start a fresh subagent and give it only the page's path, the sources as the person named them, and these instructions: read both in full; do not edit anything; report every element of the page that no passage supports, and every reason or condition a passage carries that the page drops or turns around. Every box, arrow, ✓ or ✗, ordering, heading and sentence is a claim — a figure's layout can assert an order or a cause the text never states. Also report any person, customer or account named rather than given a role, and any term explained that the sources leave unexplained. Each finding names the page element, the passage it was checked against, and what is wrong.
+The page is checked by someone who did not write it. Start a fresh subagent and give it only the page's path, the sources as the person named them, and these instructions: read both in full; do not edit anything; report every element of the page that no passage supports, and every reason or condition a passage carries that the page drops or turns around. Every box, arrow, ✓ or ✗, ordering, heading and sentence is a claim — a figure's layout can assert an order or a cause the text never states. A value or example the page labels as illustrative is a claim like any other: the label does not make it supported. Also report any person, customer or account named rather than given a role, and any term explained that the sources leave unexplained. Each finding names the page element, the passage it was checked against, and what is wrong.
 
 Do not hand it a list of claims to check: the writer choosing what gets checked defeats the check.
 
