@@ -122,7 +122,6 @@ dark: add --force-dark-mode --blink-settings=preferredColorScheme=0
 
 Read each image, fix what is wrong, and shoot again. Some things look like defects and are not:
 
-- Headless browsers have a minimum window width, so a narrow `--window-size` cuts the page off on the right. To check a phone width, put the page in an `<iframe style="width:375px">` in a wrapper page and add `--allow-file-access-from-files`.
 - A screenshot shows only the initial state. Script that draws after layout needs `--virtual-time-budget=2000`; hover and focus states never show.
 - A long page needs several shots, and no image library may be at hand to crop one. Render copies of the page with `<style>body{transform:translateY(-Npx)}</style>` injected before `</head>`, one per offset a window height apart.
 
