@@ -1,0 +1,12 @@
+{
+  "name": "visualise-document",
+  "description": "A local page that can be read instead of a document, or of several sources read together: diagrams for its flows, decisions, state changes, comparisons and amounts, concise text for the rest that keeps every reason and condition, contradictions marked, kept current as the document changes",
+  "version": "0.1.0",
+  "repository": "https://github.com/tundra-east/tundra",
+  "homepage": "https://github.com/tundra-east/tundra/tree/main/plugins/visualise-document",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "tundra-east",
+    "url": "https://github.com/tundra-east"
+  }
+}
