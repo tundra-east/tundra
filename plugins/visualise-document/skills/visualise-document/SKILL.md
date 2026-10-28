@@ -59,7 +59,7 @@ Within each topic, decide passage by passage:
 - **A figure** where the claim has a shape. Name the question it answers. One figure per claim; cut a candidate only when it repeats another.
 - **Text** where it has none, or for what a figure cannot carry — status, an open question, the reason behind a figure's claim when the caption cannot hold it.
 
-The page shows what the whole document says, not what you judge still matters. A passage the document has moved past — a superseded ruling, an abandoned option, an archived conclusion — is still part of what it says: show it marked the way the document marks it, never as current.
+The page shows the document's current state, not its history. Which passages are past is the document's call, never yours: what it marks as reversed, superseded, abandoned or archived is past, and everything else is current, whether or not you judge it still matters. A past passage appears only where a current one needs it — a reversed ruling as one line beside the ruling that reversed it, saying what it held and why it was reversed; an abandoned option as one line on why it was dropped. Leave archived sections out, and draw no figure of how a ruling changed over time.
 
 Do not stop to confirm the list. The person usually has not read the source either, so they cannot judge what belongs on the page before it exists. What they want added or removed they say after reading the page, and the next run takes it in (step 7).
 
@@ -124,7 +124,15 @@ Fix each finding, or keep the element and say in the report why the finding is w
 
 ## 9. Check it in a browser
 
-A layout defect — a clipped label, a box over a label, a missing arrowhead, crossing lines, uneven table columns — is found by looking, not by reading the HTML. Find a Chromium-family browser on this machine (Chrome, Edge, Chromium or Brave, in their usual install locations or on `PATH`), and screenshot the page headless in light and dark:
+First measure what can be measured:
+
+```
+python "${CLAUDE_SKILL_DIR}/scripts/check_page.py" <page>
+```
+
+It reports text cut off by its figure's edge, text running past its box, labels drawn over each other, a page wider than the window, an id used twice, and a caption ending in a gathered list of passages. Fix every finding and run it again, and run it once more after any later edit to the page, step 8's fixes included. When it finds no browser it checks the markup alone and says so.
+
+Other layout defects — a line through a label, a missing arrowhead, crossing lines, uneven table columns — are found only by looking, not by reading the HTML. Find a Chromium-family browser on this machine (Chrome, Edge, Chromium or Brave, in their usual install locations or on `PATH`), and screenshot the page headless in light and dark:
 
 ```
 <browser> --headless=new --disable-gpu --hide-scrollbars --window-size=1280,<height> --screenshot=<absolute .png> file:///<absolute page>
@@ -145,7 +153,7 @@ In the session, in the person's language:
 - the page's path, and each file written or changed, saying which are tracked by git — a page beside a tracked document shows up as a change the person may not expect;
 - the topics, and under each the figures, one line each with the question it answers;
 - every contradiction, each with where its two sides are written, so the person can correct the source;
-- each passage left out and why, which should only ever be a repetition of another;
+- each passage left out and why, which should only ever be a repetition of another or past content (step 4);
 - what step 8 found and how each finding was settled;
 - on a combined page where no figure draws on more than one source, that separate pages would have read as well;
 - what was not read, from step 1, and what was not checked — the sources, a browser, an interaction state;

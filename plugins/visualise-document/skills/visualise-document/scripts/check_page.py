@@ -1,0 +1,256 @@
+"""Report the layout defects of a visualise-document page that can be measured rather than judged.
+
+Two kinds of check run:
+- in the page's markup: element ids used twice (a second marker with the same id points every arrow at the first),
+  and a caption that ends in a gathered list of source identifiers instead of citing each sentence;
+- in a headless Chromium-family browser at 1280 px: text cut off by its figure's edge, text running past the box it sits in,
+  two labels drawn over each other, and a page wider than the window.
+
+What it cannot see is still found by looking at the screenshots: a line drawn through a label, crossing lines, a missing arrowhead.
+
+Usage:
+    python check_page.py <page.html> [--browser <path>]
+
+Exit status 0 when nothing is found, 1 when something is, 2 when no browser can be found (the markup checks still print).
+"""
+
+import argparse
+import html
+import json
+import os
+import pathlib
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from html.parser import HTMLParser
+
+EXIT_OK = 0
+EXIT_FOUND = 1
+EXIT_NO_BROWSER = 2
+
+WIDTH = 1280
+# a measured edge within this many pixels of its limit is rounding, not a defect
+TOLERANCE = 1.0
+# two labels overlap only when they share more than this in both directions, so stacked lines that touch do not count
+OVERLAP_MIN = 2.0
+
+BROWSER_PATHS = (
+    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+    r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+    r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+    r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe",
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+)
+BROWSER_NAMES = ("google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "microsoft-edge", "msedge", "brave-browser", "chrome")
+
+# a source identifier: a short token carrying a digit, such as D12, section 3.1, Q4 or FR-4
+_NOT_IDENT = r"\s\u3001,\uff0c;\uff1b\u3002!?\uff01\uff1f()\uff08\uff09"
+IDENT = r"(?=[^%s]*\d)[^%s]{1,12}" % (_NOT_IDENT, _NOT_IDENT)
+# a caption whose last sentence is nothing but two or more identifiers separated by list punctuation;
+# an ASCII full stop ends a sentence only before a space, since it also sits inside identifiers such as 3.1
+GATHERED = re.compile(r"(?:^|[\u3002\uff01\uff1f)\uff09]|[.!?]\s)\s*(%s(?:\s*[\u3001,\uff0c;\uff1b]\s*%s)+)\s*[\u3002.]?\s*$" % (IDENT, IDENT))
+
+MEASURE_JS = r"""
+<script>
+addEventListener('load', () => {
+  const out = {page: {scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth}, svgs: []};
+  const box = r => ({x: r.left, y: r.top, w: r.width, h: r.height});
+  document.querySelectorAll('svg').forEach(svg => {
+    const fig = svg.closest('figure');
+    const entry = {figure: fig && fig.id ? fig.id : '', frame: box(svg.getBoundingClientRect()), rects: [], texts: []};
+    svg.querySelectorAll('rect').forEach(r => {
+      const b = r.getBoundingClientRect();
+      if (b.width > 0 && b.height > 0) entry.rects.push(box(b));
+    });
+    svg.querySelectorAll('text').forEach(t => {
+      const b = t.getBoundingClientRect();
+      if (b.width > 0 && b.height > 0 && t.textContent.trim()) entry.texts.push(Object.assign(box(b), {text: t.textContent.trim()}));
+    });
+    out.svgs.push(entry);
+  });
+  const pre = document.createElement('pre');
+  pre.id = '__check_page';
+  pre.textContent = JSON.stringify(out);
+  document.body.appendChild(pre);
+});
+</script>
+"""
+
+
+class _Markup(HTMLParser):
+    """Collects every element id with its count, and the text of each figure caption with the figure it belongs to."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.ids = {}
+        self.captions = []
+        self._figure = []
+        self._caption = None
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if attrs.get("id"):
+            self.ids[attrs["id"]] = self.ids.get(attrs["id"], 0) + 1
+        if tag == "figure":
+            self._figure.append(attrs.get("id") or "")
+        elif tag == "figcaption":
+            self._caption = []
+
+    def handle_endtag(self, tag):
+        if tag == "figure" and self._figure:
+            self._figure.pop()
+        elif tag == "figcaption" and self._caption is not None:
+            self.captions.append((self._figure[-1] if self._figure else "", "".join(self._caption)))
+            self._caption = None
+
+    def handle_data(self, data):
+        if self._caption is not None:
+            self._caption.append(data)
+
+
+def markup_findings(text):
+    """The findings that need only the page's markup."""
+    parser = _Markup()
+    parser.feed(text)
+    found = []
+    for ident, count in sorted(parser.ids.items()):
+        if count > 1:
+            found.append("id %r is used %d times; a marker or link that names it reaches only the first" % (ident, count))
+    for figure, caption in parser.captions:
+        m = GATHERED.search(" ".join(caption.split()))
+        if m:
+            found.append("%s: the caption ends in a gathered list %r; cite each sentence's passages right after it" % (figure or "a figure", m.group(1)))
+    return found
+
+
+def _right(b):
+    return b["x"] + b["w"]
+
+
+def _bottom(b):
+    return b["y"] + b["h"]
+
+
+def _contains(outer, x, y):
+    return outer["x"] <= x <= _right(outer) and outer["y"] <= y <= _bottom(outer)
+
+
+def _excess(inner, outer):
+    """How far inner runs past outer on each side, as {side: pixels}, keeping only what exceeds the tolerance."""
+    sides = {
+        "left": outer["x"] - inner["x"],
+        "right": _right(inner) - _right(outer),
+        "top": outer["y"] - inner["y"],
+        "bottom": _bottom(inner) - _bottom(outer),
+    }
+    return {side: d for side, d in sides.items() if d > TOLERANCE}
+
+
+def _overlap(a, b):
+    w = min(_right(a), _right(b)) - max(a["x"], b["x"])
+    h = min(_bottom(a), _bottom(b)) - max(a["y"], b["y"])
+    return w > OVERLAP_MIN and h > OVERLAP_MIN
+
+
+def _label(t):
+    text = t["text"]
+    return repr(text if len(text) <= 40 else text[:39] + "...")
+
+
+def _describe(excess):
+    return ", ".join("%s %.0f px" % (side, d) for side, d in sorted(excess.items()))
+
+
+def geometry_findings(measured):
+    """The findings from what the browser measured: clipped text, text past its box, overlapping labels, a page too wide."""
+    found = []
+    page = measured.get("page") or {}
+    if page.get("scrollWidth", 0) > page.get("clientWidth", 0) + TOLERANCE:
+        found.append("the page is %d px wide in a %d px window, so it scrolls sideways" % (page["scrollWidth"], page["clientWidth"]))
+    for i, svg in enumerate(measured.get("svgs") or []):
+        where = svg.get("figure") or "svg %d" % (i + 1)
+        frame = svg["frame"]
+        texts = svg.get("texts") or []
+        for t in texts:
+            clipped = _excess(t, frame)
+            if clipped:
+                found.append("%s: %s is cut off by the figure's edge (%s)" % (where, _label(t), _describe(clipped)))
+                continue
+            # the box a label sits in is the smallest rectangle holding its centre;
+            # a label whose centre lies in no rectangle is free-standing and has no box to run past
+            cx, cy = t["x"] + t["w"] / 2, t["y"] + t["h"] / 2
+            holders = [r for r in svg.get("rects") or [] if _contains(r, cx, cy)]
+            if holders:
+                holder = min(holders, key=lambda r: r["w"] * r["h"])
+                past = _excess(t, holder)
+                if past:
+                    found.append("%s: %s runs past the box it sits in (%s)" % (where, _label(t), _describe(past)))
+        for a_index, a in enumerate(texts):
+            for b in texts[a_index + 1:]:
+                if _overlap(a, b):
+                    found.append("%s: %s and %s are drawn over each other" % (where, _label(a), _label(b)))
+    return found
+
+
+def find_browser(given=None):
+    if given:
+        return given if os.path.isfile(given) else None
+    for path in BROWSER_PATHS:
+        if os.path.isfile(path):
+            return path
+    for name in BROWSER_NAMES:
+        path = shutil.which(name)
+        if path:
+            return path
+    return None
+
+
+def measure(page_text, browser):
+    """Render a copy of the page with the measuring script injected and read back what it measured."""
+    injected = re.sub(r"</head>", lambda _: MEASURE_JS + "</head>", page_text, count=1, flags=re.IGNORECASE)
+    if injected == page_text:
+        injected = MEASURE_JS + page_text
+    with tempfile.TemporaryDirectory() as tmp:
+        copy = pathlib.Path(tmp) / "page.html"
+        copy.write_text(injected, encoding="utf-8", newline="\n")
+        args = [browser, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--virtual-time-budget=3000",
+                "--window-size=%d,1000" % WIDTH, "--user-data-dir=%s" % (pathlib.Path(tmp) / "profile"),
+                "--dump-dom", copy.resolve().as_uri()]
+        proc = subprocess.run(args, capture_output=True, timeout=120)
+    dom = proc.stdout.decode("utf-8", errors="replace")
+    m = re.search(r'<pre id="__check_page">(.*?)</pre>', dom, re.DOTALL)
+    if not m:
+        raise RuntimeError("the browser returned no measurements (exit %d)" % proc.returncode)
+    return json.loads(html.unescape(m.group(1)))
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("page")
+    parser.add_argument("--browser", help="a Chromium-family browser to measure with, when it is not in a usual place")
+    args = parser.parse_args(argv)
+    # labels are in the page's language, and a Windows console cannot print most of them
+    sys.stdout.reconfigure(errors="backslashreplace")
+
+    text = pathlib.Path(args.page).read_text(encoding="utf-8")
+    found = markup_findings(text)
+    browser = find_browser(args.browser)
+    if browser:
+        found += geometry_findings(measure(text, browser))
+    for line in found:
+        print(line)
+    if not browser:
+        print("no Chromium-family browser found, so nothing was measured; only the markup was checked")
+        return EXIT_NO_BROWSER
+    print("%d finding(s)" % len(found))
+    return EXIT_FOUND if found else EXIT_OK
+
+
+if __name__ == "__main__":
+    sys.exit(main())
