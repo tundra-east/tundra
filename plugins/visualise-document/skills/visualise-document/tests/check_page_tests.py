@@ -63,9 +63,19 @@ def _b(x, y, w, h, text=None):
     return b
 
 
-def _measured(texts, rects=(), frame=(0, 0, 800, 400), page=(1264, 1264), figure="fig-1"):
+def _measured(texts, rects=(), frame=(0, 0, 800, 400), page=(1264, 1264), figure="fig-1", boxes=()):
     return {"page": {"scrollWidth": page[0], "clientWidth": page[1]},
-            "svgs": [{"figure": figure, "frame": _b(*frame), "rects": list(rects), "texts": list(texts)}]}
+            "svgs": [{"figure": figure, "frame": _b(*frame), "rects": list(rects), "texts": list(texts),
+                      "boxes": list(boxes)}]}
+
+
+RED = [208, 59, 59, 1]
+
+
+def _box(fill=RED, stroke=RED, fill_opacity=1.0, dashed=False, x=100, y=100, w=120, h=40):
+    b = _b(x, y, w, h)
+    b.update({"fill": fill, "fillOpacity": fill_opacity, "stroke": stroke, "dashed": dashed})
+    return b
 
 
 def _kinds(measured):
@@ -80,7 +90,17 @@ def _kinds(measured):
             kinds.append("overlap")
         elif "scrolls sideways" in f:
             kinds.append("too wide")
+        elif "no tint" in f:
+            kinds.append("untinted")
     return kinds
+
+
+def _untinted(*boxes, **kw):
+    return _kinds(_measured([], boxes=boxes, **kw))
+
+
+# laid over white, the red's channels close by its spread times the fill's alpha
+SPREAD = 208 - 59
 
 
 # ----- tests -----------------------------------------------------------------------
@@ -143,6 +163,39 @@ def test_overlap():
 def test_page_width():
     check("a page wider than the window", _kinds(_measured([], page=(3000, 1264))), ["too wide"])
     check("a page that fits", _kinds(_measured([], page=(1264, 1264))), [])
+
+
+def test_untinted_box_fires():
+    check("fill none behind a red border", _untinted(_box(fill=[0, 0, 0, 0])), ["untinted"])
+    check("opaque white fill", _untinted(_box(fill=[255, 255, 255, 1])), ["untinted"])
+    check("red fill at alpha 0.01", _untinted(_box(fill=[208, 59, 59, 0.01])), ["untinted"])
+    check("red fill thinned by fill-opacity 0.02", _untinted(_box(fill_opacity=0.02)), ["untinted"])
+    # alpha 0.2 or fill-opacity 0.2 alone leaves chroma about 30, and both together about 6
+    check("fill alpha and fill-opacity multiply", _untinted(_box(fill=[208, 59, 59, 0.2], fill_opacity=0.2)), ["untinted"])
+    at = check_page.TINT_CHROMA_MAX / SPREAD
+    check("fill chroma exactly at the limit", _untinted(_box(fill=[208, 59, 59, at])), ["untinted"])
+    found = check_page.geometry_findings(_measured([], frame=(50, 20, 800, 400), figure="fig-3",
+                                                   boxes=[_box(fill=[0, 0, 0, 0], x=150, y=120)]))
+    check("the figure, position in the frame and border are named",
+          [f.startswith("fig-3:") and "box at 100,100" in f and "#d03b3b border" in f for f in found], [True])
+    # fill none lays over white as pure white, so its chroma is 0
+    check("the fill chroma is named", ["(fill chroma 0)" in f for f in found], [True])
+    unnamed = check_page.geometry_findings(_measured([], figure="", boxes=[_box(fill=[0, 0, 0, 0])]))
+    check("a figure with no id is named by its index", [f.startswith("svg 1:") for f in unnamed], [True])
+
+
+def test_untinted_box_quiet():
+    check("red fill at alpha 0.1 is a tint", _untinted(_box(fill=[208, 59, 59, 0.1])), [])
+    above = (check_page.TINT_CHROMA_MAX + 0.5) / SPREAD
+    check("fill chroma just above the limit", _untinted(_box(fill=[208, 59, 59, above])), [])
+    check("a dashed border", _untinted(_box(fill=[0, 0, 0, 0], dashed=True)), [])
+    check("a grey border", _untinted(_box(fill=[0, 0, 0, 0], stroke=[136, 136, 136, 1])), [])
+    check("a red border at alpha 0.1 is not coloured", _untinted(_box(fill=[0, 0, 0, 0], stroke=[208, 59, 59, 0.1])), [])
+    check("an arrowhead-sized shape", _untinted(_box(fill=[0, 0, 0, 0], w=20, h=12)), [])
+    check("a box too short, wide enough", _untinted(_box(fill=[0, 0, 0, 0], h=12)), [])
+    check("a box too narrow, tall enough", _untinted(_box(fill=[0, 0, 0, 0], w=20)), [])
+    check("a gradient fill", _untinted(_box(fill=None)), [])
+    check("no stroke", _untinted(_box(fill=[0, 0, 0, 0], stroke=None)), [])
 
 
 def test_find_browser():

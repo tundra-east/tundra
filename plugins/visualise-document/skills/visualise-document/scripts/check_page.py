@@ -4,7 +4,8 @@ Two kinds of check run:
 - in the page's markup: element ids used twice (a second marker with the same id points every arrow at the first),
   and a caption that ends in a gathered list of source identifiers instead of citing each sentence;
 - in a headless Chromium-family browser at 1280 px: text cut off by its figure's edge, text running past the box it sits in,
-  two labels drawn over each other, and a page wider than the window.
+  two labels drawn over each other, a page wider than the window,
+  and a box with a coloured solid border but no tint of colour behind it.
 
 What it cannot see is still found by looking at the screenshots: a line drawn through a label, crossing lines, a missing arrowhead.
 
@@ -35,6 +36,14 @@ WIDTH = 1280
 TOLERANCE = 1.0
 # two labels overlap only when they share more than this in both directions, so stacked lines that touch do not count
 OVERLAP_MIN = 2.0
+# a shape is a box only above this size, so arrowheads and dots are left out
+BOX_MIN_W = 24.0
+BOX_MIN_H = 16.0
+# chroma (largest minus smallest channel, 0-255) of a colour once laid over white —
+# a border above BORDER_CHROMA_MIN is coloured, and a fill at or below TINT_CHROMA_MAX shows no colour.
+# measured fills of coloured boxes fell at 1 or at 12 and above, with nothing between
+BORDER_CHROMA_MIN = 40.0
+TINT_CHROMA_MAX = 8.0
 
 BROWSER_PATHS = (
     r"C:\Program Files\Google\Chrome\Application\chrome.exe",
@@ -61,12 +70,31 @@ MEASURE_JS = r"""
 addEventListener('load', () => {
   const out = {page: {scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth}, svgs: []};
   const box = r => ({x: r.left, y: r.top, w: r.width, h: r.height});
+  // a colour in any CSS syntax read back as [r, g, b, alpha] by painting one pixel,
+  // [0, 0, 0, 0] for none, and null for what is not a plain colour, such as a gradient
+  const ctx = document.createElement('canvas').getContext('2d', {willReadFrequently: true});
+  const colour = v => {
+    if (!v || v === 'none') return [0, 0, 0, 0];
+    if (!CSS.supports('color', v)) return null;
+    ctx.clearRect(0, 0, 1, 1);
+    ctx.fillStyle = v;
+    ctx.fillRect(0, 0, 1, 1);
+    const d = ctx.getImageData(0, 0, 1, 1).data;
+    return [d[0], d[1], d[2], d[3] / 255];
+  };
   document.querySelectorAll('svg').forEach(svg => {
     const fig = svg.closest('figure');
-    const entry = {figure: fig && fig.id ? fig.id : '', frame: box(svg.getBoundingClientRect()), rects: [], texts: []};
+    const entry = {figure: fig && fig.id ? fig.id : '', frame: box(svg.getBoundingClientRect()), rects: [], texts: [], boxes: []};
     svg.querySelectorAll('rect').forEach(r => {
       const b = r.getBoundingClientRect();
       if (b.width > 0 && b.height > 0) entry.rects.push(box(b));
+    });
+    svg.querySelectorAll('rect, circle, ellipse, polygon').forEach(el => {
+      const b = el.getBoundingClientRect();
+      const s = getComputedStyle(el);
+      entry.boxes.push(Object.assign(box(b), {
+        fill: colour(s.fill), fillOpacity: parseFloat(s.fillOpacity), stroke: colour(s.stroke),
+        dashed: s.strokeDasharray !== 'none' && s.strokeDasharray !== ''}));
     });
     svg.querySelectorAll('text').forEach(t => {
       const b = t.getBoundingClientRect();
@@ -167,8 +195,32 @@ def _describe(excess):
     return ", ".join("%s %.0f px" % (side, d) for side, d in sorted(excess.items()))
 
 
+def _over_white(colour, opacity=1.0):
+    """The colour as it shows laid over white, with its own alpha and the element's opacity both applied."""
+    r, g, b, alpha = colour
+    a = alpha * opacity
+    return [c * a + 255 * (1 - a) for c in (r, g, b)]
+
+
+def _chroma(rgb):
+    return max(rgb) - min(rgb)
+
+
+def _untinted(box):
+    """The fill's chroma when a box has a coloured solid border and almost no colour behind it, otherwise None."""
+    if box["dashed"] or box["fill"] is None or box["stroke"] is None:
+        return None
+    if box["w"] <= BOX_MIN_W or box["h"] <= BOX_MIN_H:
+        return None
+    if _chroma(_over_white(box["stroke"])) <= BORDER_CHROMA_MIN:
+        return None
+    tint = _chroma(_over_white(box["fill"], box["fillOpacity"]))
+    return tint if tint <= TINT_CHROMA_MAX else None
+
+
 def geometry_findings(measured):
-    """The findings from what the browser measured: clipped text, text past its box, overlapping labels, a page too wide."""
+    """The findings from what the browser measured: clipped text, text past its box, overlapping labels, a page too wide,
+    and coloured borders with no tint behind them."""
     found = []
     page = measured.get("page") or {}
     if page.get("scrollWidth", 0) > page.get("clientWidth", 0) + TOLERANCE:
@@ -195,6 +247,11 @@ def geometry_findings(measured):
             for b in texts[a_index + 1:]:
                 if _overlap(a, b):
                     found.append("%s: %s and %s are drawn over each other" % (where, _label(a), _label(b)))
+        for b in svg.get("boxes") or []:
+            tint = _untinted(b)
+            if tint is not None:
+                found.append("%s: the box at %.0f,%.0f has a #%02x%02x%02x border but no tint behind it (fill chroma %.0f); give it a pale fill of the border's colour"
+                             % (where, b["x"] - frame["x"], b["y"] - frame["y"], b["stroke"][0], b["stroke"][1], b["stroke"][2], tint))
     return found
 
 

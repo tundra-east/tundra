@@ -73,6 +73,7 @@ Load `artifact-diagramming` and `dataviz` with the Skill tool and follow them fo
 - Compare along the claim's own axis. A change is shown as the same thing before and after, side by side on one scale, not as the two places that happen to hold the two values.
 - Split a quantity into the parts the mechanism treats differently, named in the legend by their role in it, so the figure shows why the result moves and not only that it moves. Label each part that moves with its difference.
 - When the sources state a rule and some of its results but not every input, use a worked example: choose values that reproduce every figure the sources give, label them as an example, and state any assumption the values need that the sources do not make.
+- A box drawn in a colour takes both a border and a pale fill of that colour, never the border alone. A dashed border, for what is out of scope, needs no fill.
 - Every branch carries its condition on its edge, and every exit names what sends a case there.
 - A path the reader would expect but that does not exist is drawn as a dashed edge marked ✕, labelled with what it would have done.
 - Alternatives are drawn as small multiples: the same layout for each, so only what differs moves.
@@ -131,7 +132,7 @@ First measure what can be measured:
 python "${CLAUDE_SKILL_DIR}/scripts/check_page.py" <page>
 ```
 
-It reports text cut off by its figure's edge, text running past its box, labels drawn over each other, a page wider than the window, an id used twice, and a caption ending in a gathered list of passages. Fix every finding and run it again, and run it once more after any later edit to the page, step 8's fixes included. When it finds no browser it checks the markup alone and says so.
+It reports text cut off by its figure's edge, text running past its box, labels drawn over each other, a page wider than the window, a box with a coloured border and no tint behind it, an id used twice, and a caption ending in a gathered list of passages. Fix every finding and run it again, and run it once more after any later edit to the page, step 8's fixes included. When it finds no browser it checks the markup alone and says so.
 
 Other layout defects — a line through a label, a missing arrowhead, crossing lines, uneven table columns — are found only by looking, not by reading the HTML. Find a Chromium-family browser on this machine (Chrome, Edge, Chromium or Brave, in their usual install locations or on `PATH`), and screenshot the page headless in light and dark:
 
