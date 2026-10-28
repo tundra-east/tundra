@@ -27,7 +27,8 @@ The design knowledge — which form fits a claim, how to draw it so it reads, ho
 Take from the arguments, in the person's own words:
 
 - **The sources.** One or more local paths, links or ticket keys. Fetch a remote one with whatever tool this session has for it; when none can reach it, say so and stop rather than writing from a guess.
-- **What could not be read.** A source often shows more than this session can read: an image, an attachment, a macro's content, a page it links to. Each is a gap, not something to infer. Note where it sits in the source, use only what was read, and when the source hands its substance to another page, ask whether to name that page as a source too.
+- **What could not be read, and what was not.** A source often holds more than this session can read — an image, an attachment, a macro's content — and links to more than it holds: a parent page, a ticket, a related document. Each is a gap, not something to infer: note where it sits in the source and use only what was read. Read a linked document only when the person asks for it, by naming it or by asking for the source's linked documents; it is then a source like any other and the header lists it. Follow links one level from the sources the person named, never the links a linked document makes in turn.
+- **Code the sources cite.** Commit ids, pull requests, file paths and class names in a source are its evidence, not further sources: say once that the code it cites was not read, rather than listing each. Read code only when the person names a specific piece of it — a commit, a pull request, a file or a class — and then only that piece: for a commit or pull request, its description, its diff and the files the diff touches as they stood at that commit, since a hunk read alone misleads; for a file or a class, it as it stands. Follow nothing further — not a caller, not another file. Where the description and the diff disagree, mark it as a contradiction, and where the piece leaves its behaviour unclear, say so among the gaps so the person can name the next piece. A repository or codebase as a whole is never a source.
 - **The language** of the page, if named. Otherwise use the language the loaded instructions ask for in output meant for the person, and failing that the source's own.
 - **One page or several,** when there are several sources. Default to one page per source. Make one combined page only when the person asks for it — typically to read a ticket, a wiki page and some logs together and see the whole.
 
@@ -35,10 +36,10 @@ Take from the arguments, in the person's own words:
 
 Every run reads the whole source and decides every figure and every section afresh. An earlier page, when there is one, is what the new page is compared with, so look for it first.
 
-- **Where the page goes.** Beside a local source, as `<source file name>.visual.html`. For a remote source or a combined page, in the current directory unless the loaded instructions name a place; propose that location and let the person confirm or change it.
-- **The earlier page** is a page in that place whose embedded facts (step 6) list the same sources. The file name only finds candidates; the embedded sources decide, since a source can be renamed.
+- **Where the page goes.** Beside a local source, named after it with its extension replaced: `plan.md` becomes `plan.visual.html`. For a remote source or a combined page, in the current directory unless the loaded instructions name a place; propose that location and let the person confirm or change it.
+- **The earlier page** is any `*.visual.html` in that place whose embedded facts (step 6) list the same sources. The embedded sources decide, not the file name, since a source can be renamed.
 
-When there is an earlier page, keep its language and its figure ids.
+When there is an earlier page, update it where it is, under its own name, and keep its language and its figure ids.
 
 ## 3. Read the whole source
 
@@ -65,7 +66,7 @@ Do not stop to confirm the list. The person usually has not read the source eith
 
 ## 5. Draw and write
 
-Load `artifact-diagramming` and `dataviz` with the Skill tool and follow them for every figure. If either cannot be loaded, stop and say so: without them this skill has no design knowledge of its own, and a page drawn without it is the failure this skill exists to prevent.
+Load `artifact-diagramming` and `dataviz` with the Skill tool and follow them for every figure. Neither is in every session — `artifact-diagramming` comes only with Artifacts, and either can be turned off — so when one cannot be loaded, draw without it rather than stop: the rules below and step 9's checks still hold. Name the missing one in the page's header and in the report. Without `dataviz` no palette can be validated, so use only the status colours and neutrals, and say that the palette was not validated.
 
 - Pick each figure's form from its claim, as those skills describe, and validate any categorical palette with the script `dataviz` provides, in light and dark.
 - One question and one level per figure. A figure that shows both where a change was made and how behaviour changes is two figures: draw the whole first — every step, marking which ones changed — then each part worth a closer look as a figure of its own.
