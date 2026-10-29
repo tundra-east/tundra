@@ -197,7 +197,7 @@ def _fake_browsers():
 
 def _expected_shots(out, height):
     # the names _shoot writes, a light and a dark shot for each offset
-    return [(pathlib.Path(out) / ("%s-%05d.png" % (mode, offset))).resolve()
+    return [(pathlib.Path(out) / ("%s_%05d.png" % (mode, offset))).resolve()
             for offset in check_page.shot_offsets(height) for mode in ("light", "dark")]
 
 
@@ -368,8 +368,8 @@ def test_screenshots():
             check("a missing dark shot gives None", check_page._shoot(PLAIN, 1, "c", pathlib.Path(out)), None)
         with tempfile.TemporaryDirectory() as tmp:
             # screenshots left by an earlier run at the paths of the first light and dark shots
-            stale = os.path.join(tmp, "light-00000.png")
-            for name in ("light-00000.png", "dark-00000.png"):
+            stale = os.path.join(tmp, "light_00000.png")
+            for name in ("light_00000.png", "dark_00000.png"):
                 with open(os.path.join(tmp, name), "wb") as f:
                     f.write(b"stale")
             got = check_page.screenshots(PLAIN, 1, ["a"], tmp)
@@ -381,7 +381,7 @@ def test_screenshots():
             received.clear()
             shots = _expected_shots(out, tall + 1)
             check("a page past one window gets every offset", check_page.screenshots(PLAIN, tall + 1, ["b"], out), (shots, "b"))
-            moved = [p for p in shots if p.name.endswith("-%05d.png" % tall)]
+            moved = [p for p in shots if p.name.endswith("_%05d.png" % tall)]
             check("the copy one window down is moved up a window, light and dark",
                   ["translateY(-%dpx)" % tall in received.get(str(p), "") for p in moved], [True, True])
 

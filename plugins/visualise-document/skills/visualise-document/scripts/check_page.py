@@ -333,7 +333,7 @@ def _shoot(page_text, height, browser, out):
             shifted = _inject(page_text, "<style>body{transform:translateY(-%dpx)}</style>" % offset)
             copy.write_text(shifted, encoding="utf-8", newline="\n")
             for mode in ("light", "dark"):
-                png = (out / ("%s-%05d.png" % (mode, offset))).resolve()
+                png = (out / ("%s_%05d.png" % (mode, offset))).resolve()
                 if png.exists():
                     png.unlink()
                 subprocess.run(shot_args(browser, copy.resolve().as_uri(), png, profile, mode == "dark"),
