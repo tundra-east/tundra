@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 f6aa4f1f326c44d1008c64c4b5158813eef0a8ff66551183b3e079233632236d; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 eae76ba276b3463e6c0bfb366d01dd968f002e4a517e74ee75550c08dfb8f86e; see the root CLAUDE.md "Translations" before editing -->
 <div align="center">
 
 <picture>
@@ -12,7 +12,7 @@
 
 </div>
 
-一個 Claude Code plugin marketplace：收錄把工單帶到經過審查的 pull request 的 plugin，讓你看清自己工作方式的 plugin，以及一個幫你填工時表的 plugin。
+一個 Claude Code plugin marketplace：收錄把工單帶到經過審查的 pull request 的 plugin，讓你看清自己工作方式的 plugin，一個把文件變成讀了就不必再讀原文的頁面的 plugin，以及一個幫你填工時表的 plugin。
 
 <a id="install"></a>
 ## 📦 安裝
@@ -85,6 +85,25 @@
 
 ```
 /plugin install remind-me@tundra
+```
+
+### 📄 你的文件
+
+#### [`visualise-document`](plugins/visualise-document/README.zh-TW.md)
+
+把一份文件變成一個讀了就不必再讀原文的頁面：有形狀的段落畫成最合適的圖，其餘寫成精簡的文字。
+
+<a href="plugins/visualise-document/docs/before-after-light.zh-TW.png"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/visualise-document/before-after-dark.zh-TW.png">
+  <img alt="一份虛構計畫的三段原文，旁邊是由它們畫出的圖：狀態圖、兩天未記錄處留白的每日數量長條圖，以及貨架上限的分區軸線" src="docs/visualise-document/before-after-light.zh-TW.png" width="720">
+</picture></a>
+
+圖片取自一份虛構的計畫。模型每次都依來源重新畫出頁面，所以這一頁的英文版和簡體中文版，顯示的是同一份計畫另外幾次執行的結果。
+
+安裝指令：
+
+```
+/plugin install visualise-document@tundra
 ```
 
 ### ⏱️ 你的工時表

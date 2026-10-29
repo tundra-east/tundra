@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 f6aa4f1f326c44d1008c64c4b5158813eef0a8ff66551183b3e079233632236d; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 eae76ba276b3463e6c0bfb366d01dd968f002e4a517e74ee75550c08dfb8f86e; see the root CLAUDE.md "Translations" before editing -->
 <div align="center">
 
 <picture>
@@ -12,7 +12,7 @@
 
 </div>
 
-一个 Claude Code plugin marketplace：收录把工单带到经过审查的 pull request 的 plugin，让你看清自己工作方式的 plugin，以及一个帮你填工时表的 plugin。
+一个 Claude Code plugin marketplace：收录把工单带到经过审查的 pull request 的 plugin，让你看清自己工作方式的 plugin，一个把文档变成读了就不必再读原文的页面的 plugin，以及一个帮你填工时表的 plugin。
 
 <a id="install"></a>
 ## 📦 安装
@@ -85,6 +85,25 @@
 
 ```
 /plugin install remind-me@tundra
+```
+
+### 📄 你的文档
+
+#### [`visualise-document`](plugins/visualise-document/README.zh-CN.md)
+
+把一份文档变成一个读了就不必再读原文的页面：有形状的段落画成最合适的图，其余写成精简的文字。
+
+<a href="plugins/visualise-document/docs/before-after-light.zh-CN.png"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/visualise-document/before-after-dark.zh-CN.png">
+  <img alt="一份虚构计划的三段原文，旁边是由它们画出的图：状态图、在两天未记录处断开的每日数量折线图，以及货架上限的分区轴线" src="docs/visualise-document/before-after-light.zh-CN.png" width="720">
+</picture></a>
+
+图片取自一份虚构的计划。模型每次都依据来源重新画出页面，所以这一页的英文版和繁体中文版，显示的是同一份计划另外几次运行的结果。
+
+安装命令：
+
+```
+/plugin install visualise-document@tundra
 ```
 
 ### ⏱️ 你的工时表
