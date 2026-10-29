@@ -46,7 +46,7 @@ ALLOWED_GITHUB_OWNERS = {"tundra-east", "acme", "agentskills", "a-b", "other"}
 # real tracker key. anything else with two or more digits is treated as a leak,
 # since a young project's keys are two digits long.
 ALLOWED_TICKET_PREFIXES = {"acme", "gh", "issue", "hotfix", "backup", "abc",
-                           "utf", "electron", "sprint"}
+                           "utf", "electron", "sprint", "fig"}
 
 # domains whose addresses are fixtures rather than people. derived from the tracked
 # tree like the hosts above, since tests that match identities need addresses to match.
