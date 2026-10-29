@@ -94,6 +94,7 @@ For every figure:
 - Mark each contradiction where the page shows either of its claims — beside the figure, or at the point of text — with a short note giving both sides and where each is written, neither shown as the answer, and a link to its row in the closing table (step 6). A contradiction whose claims the page shows nowhere appears in the table alone.
 - Every figure must say its claim with JavaScript turned off. Script may add to it — highlighting what connects to a hovered node, toggling between before and after, stepping through a sequence — but only where you can name what it lets the reader understand that the static figure does not. Load a library from a CDN at an exact version.
 - Give each figure a stable id (`fig-1`, `fig-2`, …), and keep source identifiers such as ruling numbers untranslated, so a reader can find the passage in the source.
+- Open each figure, above the drawing, with a small label showing its id as written, untranslated in any page language, and a short title of a few words in the page's language naming what it shows, so the text can refer to it and a reader knows what it is about before reading it. The caption below still states its claim.
 
 Then the text, under each topic:
 
@@ -144,7 +145,7 @@ First measure what can be measured:
 python "${CLAUDE_SKILL_DIR}/scripts/check_page.py" <page>
 ```
 
-It reports text cut off by its figure's edge, text running past its box, labels drawn over each other, a page wider than the window, text running wider than its column should, a box with a solid border and no fill, an id used twice, and a caption ending in a gathered list of passages. Fix every finding and run it again, and run it once more after any later edit to the page, step 8's fixes included. When it finds no browser it checks the markup alone and says so.
+It reports text cut off by its figure's edge, text running past its box, labels drawn over each other, a page wider than the window, text running wider than its column should, a box with a solid border and no fill, an id used twice, a figure that does not show its id, and a caption ending in a gathered list of passages. Fix every finding and run it again, and run it once more after any later edit to the page, step 8's fixes included. When it finds no browser it checks the markup alone and says so.
 
 Other layout defects — a line through a label, a missing arrowhead, crossing lines, uneven table columns — are found only by looking, not by reading the HTML. The same script screenshots the whole page, light and dark, into a scratch folder away from the page, and prints each image's path:
 

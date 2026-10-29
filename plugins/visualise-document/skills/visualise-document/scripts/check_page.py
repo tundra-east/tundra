@@ -2,7 +2,8 @@
 
 Two kinds of check run:
 - in the page's markup: element ids used twice (a second marker with the same id points every arrow at the first),
-  and a caption that ends in a gathered list of source identifiers instead of citing each sentence;
+  a caption that ends in a gathered list of source identifiers instead of citing each sentence,
+  and a figure whose id shows nowhere outside its drawing;
 - in a headless Chromium-family browser at 1280 px: text cut off by its figure's edge, text running past the box it sits in,
   two labels drawn over each other, a page wider than the window, a column of text wider than TEXT_MAX_W,
   a box with a coloured solid border but no tint of colour behind it, and a box with a neutral solid border and no fill.
@@ -125,34 +126,45 @@ addEventListener('load', () => {
 
 
 class _Markup(HTMLParser):
-    """Collects every element id with its count, and the text of each figure caption with the figure it belongs to."""
+    """Collects every element id with its count, the text of each figure caption with the figure it belongs to,
+    and each figure's text outside its drawings, in the order the figures open."""
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.ids = {}
         self.captions = []
+        self.figure_text = []
         self._figure = []
         self._caption = None
+        self._svg = 0
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         if attrs.get("id"):
             self.ids[attrs["id"]] = self.ids.get(attrs["id"], 0) + 1
         if tag == "figure":
-            self._figure.append(attrs.get("id") or "")
+            self._figure.append(len(self.figure_text))
+            self.figure_text.append((attrs.get("id") or "", []))
         elif tag == "figcaption":
             self._caption = []
+        elif tag == "svg":
+            self._svg += 1
 
     def handle_endtag(self, tag):
         if tag == "figure" and self._figure:
             self._figure.pop()
         elif tag == "figcaption" and self._caption is not None:
-            self.captions.append((self._figure[-1] if self._figure else "", "".join(self._caption)))
+            figure = self.figure_text[self._figure[-1]][0] if self._figure else ""
+            self.captions.append((figure, "".join(self._caption)))
             self._caption = None
+        elif tag == "svg" and self._svg:
+            self._svg -= 1
 
     def handle_data(self, data):
         if self._caption is not None:
             self._caption.append(data)
+        if self._figure and not self._svg:
+            self.figure_text[self._figure[-1]][1].append(data)
 
 
 def markup_findings(text):
@@ -167,6 +179,12 @@ def markup_findings(text):
         m = GATHERED.search(" ".join(caption.split()))
         if m:
             found.append("%s: the caption ends in a gathered list %r; cite each sentence's passages right after it" % (figure or "a figure", m.group(1)))
+    for figure, text in parser.figure_text:
+        # text inside the drawing does not count, since a reader looks for the label outside it
+        # fig-1 must not be found inside fig-12, and the label's own element ends its text,
+        # so the pieces are joined with a space: "fig-2" then "0.1.7 ..." is not "fig-20.1.7"
+        if figure and not re.search(re.escape(figure) + r"(?![0-9])", " ".join(text)):
+            found.append("%s does not show its id; open it with a label such as '%s' and a short title" % (figure, figure))
     return found
 
 

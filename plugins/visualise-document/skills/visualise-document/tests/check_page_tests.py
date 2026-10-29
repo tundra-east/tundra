@@ -62,6 +62,14 @@ def _duplicates(page):
     return [f for f in check_page.markup_findings(page) if "is used" in f]
 
 
+def _unshown(page):
+    return [f for f in check_page.markup_findings(page) if "does not show its id" in f]
+
+
+def _figure(inner, ident="fig-1"):
+    return '<html><head></head><body><main><figure id="%s">%s</figure></main></body></html>' % (ident, inner)
+
+
 # ----- synthetic measurements ----------------------------------------------------
 
 
@@ -246,6 +254,41 @@ def test_duplicate_ids():
     check("a marker id used twice", len(found), 1)
     check("the count is named", ["2 times" in f for f in found], [True])
     check("distinct ids are quiet", _duplicates('<marker id="a"></marker><marker id="b"></marker>'), [])
+
+
+def test_unshown_id_fires():
+    check("the id appears nowhere", len(_unshown(_page("A short title"))), 1)
+    check("the id appears only inside the drawing",
+          len(_unshown(_figure("<svg><text>fig-1</text></svg><figcaption>A short title</figcaption>"))), 1)
+    check("fig-12 in the caption is not fig-1", len(_unshown(_page("fig-12 A short title"))), 1)
+    check("the label inside a nested svg only",
+          len(_unshown(_figure("<svg><svg><text>fig-1</text></svg></svg><figcaption>A short title</figcaption>"))), 1)
+    check("the label after a nested svg closes, still in the outer one",
+          len(_unshown(_figure("<svg><svg></svg><text>fig-1</text></svg><figcaption>A short title</figcaption>"))), 1)
+    named = _unshown(_page("A short title", ids=("fig-4",)))
+    check("the figure is named", [f.startswith("fig-4 does not show its id") and "'fig-4'" in f for f in named], [True])
+
+
+def test_unshown_id_quiet():
+    check("the id in the caption", _unshown(_page("fig-1 A short title")), [])
+    check("the id in a label element above the drawing",
+          _unshown(_figure('<div class="fig-label">fig-3</div><svg></svg><figcaption>A short title</figcaption>', "fig-3")), [])
+    check("the id in its own element, then text starting with a digit",
+          _unshown(_figure("<span>fig-2</span>0.1.7 ships the split<svg></svg>", "fig-2")), [])
+    check("a figure without an id", _unshown("<html><body><figure><svg></svg><figcaption>A short title</figcaption></figure></body></html>"), [])
+    check("a self-closing svg before the caption", _unshown(_figure("<svg/><figcaption>fig-1 A short title</figcaption>")), [])
+
+
+def test_unshown_id_beside_other_checks():
+    sentence = "Excel stays before the split" + STOP
+    shown = _page("fig-1 " + sentence + "D26" + COMMA + "D34")
+    check("a gathered list in a caption that shows the id adds no id finding", (len(_gathered(shown)), _unshown(shown)), (1, []))
+    # the existing gathered-list pages carry no id in their captions, so they raise both findings
+    unshown = _page(sentence + "D26" + COMMA + "D34")
+    check("each filter keeps only its own finding",
+          (len(_gathered(unshown)), len(_unshown(unshown)), len(check_page.markup_findings(unshown))), (1, 1, 2))
+    duplicated = '<svg><defs><marker id="ah"></marker></defs></svg><svg><defs><marker id="ah"></marker></defs></svg>'
+    check("the duplicate-id page has no figure, so no id finding", _unshown(duplicated), [])
 
 
 def test_clipped():
