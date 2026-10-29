@@ -78,12 +78,13 @@ Without `artifact-diagramming`:
 For every figure:
 
 - Pick each figure's form from its claim, as those skills describe, and validate any categorical palette with the script `dataviz` provides, in light and dark.
-- The status colours keep one meaning across the whole page — critical for a failure or an error, good for a success, warning for a warning or a step that needs a person — and appear only with those meanings, each beside a symbol or a word. What changed or was added takes the first categorical slot, and what is unchanged or out of scope is grey or dashed.
+- The status colours keep one meaning across the whole page — critical for a failure or an error, good for a success, warning for a warning or a step that needs a person — and appear only with those meanings, each beside a symbol or a word. What changed or was added takes the first categorical slot, and what is unchanged or out of scope is grey or dashed. A contradiction's mark takes warning with ⚠, since it asks the reader to decide.
 - One question and one level per figure. A figure that shows both where a change was made and how behaviour changes is two figures: draw the whole first — every step, marking which ones changed — then each part worth a closer look as a figure of its own.
 - Compare along the claim's own axis. A change is shown as the same thing before and after, side by side on one scale, not as the two places that happen to hold the two values.
 - Split a quantity into the parts the mechanism treats differently, named in the legend by their role in it, so the figure shows why the result moves and not only that it moves. Label each part that moves with its difference.
 - When the sources state a rule and some of its results but not every input, use a worked example: choose values that reproduce every figure the sources give, label them as an example, and state any assumption the values need that the sources do not make.
-- A box drawn in a colour takes both a border and a pale fill of that colour, never the border alone. A dashed border, for what is out of scope, needs no fill.
+- Every box with a solid border takes a fill as well, never the border alone: a pale tint of its colour, or a pale neutral when the box carries no colour. A dashed border, for what is out of scope, needs no fill.
+- Lay a sequence of steps or states left to right when it fits the page's width, counting the gap each connector needs for its label, and top to bottom only when it does not, since the page is long already. A connector leaves and enters by the sides that face each other, turns at right angles where it must, ends with its arrowhead on the box's edge pointing along its last segment, and keeps its label beside it, clear of every line and box.
 - Every branch carries its condition on its edge, and every exit names what sends a case there.
 - A path the reader would expect but that does not exist is drawn as a dashed edge marked ✕, labelled with what it would have done.
 - Alternatives are drawn as small multiples: the same layout for each, so only what differs moves.
@@ -104,7 +105,7 @@ Then the text, under each topic:
 
 ## 6. Write the page
 
-Write a self-contained HTML file where step 2 settled. Open it with a visible header naming the source or sources, when each was read, and the page's language. When anything was not read, follow the header with a short section listing each gap and where it sits in its source, so a reader knows what the page cannot speak to before reading on. Then the topics, overview first. Close with the contradictions as a table — one row each, with the topic it falls in (linked), where each side is written, and one line on why both cannot be true — since a reader understands a contradiction only after reading what it is about. Embed the facts the next run reads:
+Write a self-contained HTML file where step 2 settled, its main column capped at 1040 px and centred, with the text filling the column. Open it with a visible header naming the source or sources, when each was read, and the page's language. When anything was not read, follow the header with a short section listing each gap and where it sits in its source, so a reader knows what the page cannot speak to before reading on. Then the topics, overview first. Close with the contradictions as a table — one row each, with the topic it falls in (linked), where each side is written, and one line on why both cannot be true — since a reader understands a contradiction only after reading what it is about. Embed the facts the next run reads:
 
 ```html
 <script type="application/json" id="visualise-document">
@@ -142,7 +143,7 @@ First measure what can be measured:
 python "${CLAUDE_SKILL_DIR}/scripts/check_page.py" <page>
 ```
 
-It reports text cut off by its figure's edge, text running past its box, labels drawn over each other, a page wider than the window, a box with a coloured border and no tint behind it, an id used twice, and a caption ending in a gathered list of passages. Fix every finding and run it again, and run it once more after any later edit to the page, step 8's fixes included. When it finds no browser it checks the markup alone and says so.
+It reports text cut off by its figure's edge, text running past its box, labels drawn over each other, a page wider than the window, text running wider than its column should, a box with a solid border and no fill, an id used twice, and a caption ending in a gathered list of passages. Fix every finding and run it again, and run it once more after any later edit to the page, step 8's fixes included. When it finds no browser it checks the markup alone and says so.
 
 Other layout defects — a line through a label, a missing arrowhead, crossing lines, uneven table columns — are found only by looking, not by reading the HTML. The same script screenshots the whole page, light and dark, into a scratch folder away from the page, and prints each image's path:
 

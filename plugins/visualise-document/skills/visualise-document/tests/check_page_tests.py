@@ -72,13 +72,17 @@ def _b(x, y, w, h, text=None):
     return b
 
 
-def _measured(texts, rects=(), frame=(0, 0, 800, 400), page=(1264, 1264), figure="fig-1", boxes=()):
-    return {"page": {"scrollWidth": page[0], "clientWidth": page[1]},
-            "svgs": [{"figure": figure, "frame": _b(*frame), "rects": list(rects), "texts": list(texts),
-                      "boxes": list(boxes)}]}
+def _measured(texts, rects=(), frame=(0, 0, 800, 400), page=(1264, 1264), figure="fig-1", boxes=(), text_width=None):
+    measured = {"page": {"scrollWidth": page[0], "clientWidth": page[1]},
+                "svgs": [{"figure": figure, "frame": _b(*frame), "rects": list(rects), "texts": list(texts),
+                          "boxes": list(boxes)}]}
+    if text_width is not None:
+        measured["page"]["textWidth"] = text_width
+    return measured
 
 
 RED = [208, 59, 59, 1]
+GREY = [136, 136, 136, 1]
 
 
 def _box(fill=RED, stroke=RED, fill_opacity=1.0, dashed=False, x=100, y=100, w=120, h=40):
@@ -99,17 +103,28 @@ def _kinds(measured):
             kinds.append("overlap")
         elif "scrolls sideways" in f:
             kinds.append("too wide")
+        elif "paragraphs run" in f:
+            kinds.append("text column")
         elif "no tint" in f:
             kinds.append("untinted")
+        elif "no fill" in f:
+            kinds.append("unfilled")
     return kinds
 
 
 def _untinted(*boxes, **kw):
+    # the coloured check alone, since its quiet cases include neutral borders the neutral check reports
+    return [k for k in _kinds(_measured([], boxes=boxes, **kw)) if k != "unfilled"]
+
+
+def _unfilled(*boxes, **kw):
     return _kinds(_measured([], boxes=boxes, **kw))
 
 
 # laid over white, the red's channels close by its spread times the fill's alpha
 SPREAD = 208 - 59
+# laid over white, the grey's channels sit this far below white times its alpha
+GREY_DEPTH = 255 - 136
 
 
 # ----- browser fallbacks -----------------------------------------------------------
@@ -261,6 +276,59 @@ def test_overlap():
 def test_page_width():
     check("a page wider than the window", _kinds(_measured([], page=(3000, 1264))), ["too wide"])
     check("a page that fits", _kinds(_measured([], page=(1264, 1264))), [])
+
+
+def test_text_column():
+    limit = check_page.TEXT_MAX_W + check_page.TOLERANCE
+    check("a text column exactly at the limit", _kinds(_measured([], text_width=limit)), [])
+    check("a text column one pixel past the limit", _kinds(_measured([], text_width=limit + 1)), ["text column"])
+    check("a page with no text width", _kinds(_measured([])), [])
+    found = check_page.geometry_findings(_measured([], text_width=limit + 1))
+    check("the measured width is named", ["paragraphs run %d px wide" % (limit + 1) in f for f in found], [True])
+
+
+def test_unfilled_box_fires():
+    check("fill none behind a grey border", _unfilled(_box(fill=[0, 0, 0, 0], stroke=GREY)), ["unfilled"])
+    check("opaque white fill", _unfilled(_box(fill=[255, 255, 255, 1], stroke=GREY)), ["unfilled"])
+    lightest = check_page.UNFILLED_LIGHTEST
+    check("a neutral fill exactly at the lightest", _unfilled(_box(fill=[lightest] * 3 + [1], stroke=GREY)), ["unfilled"])
+    # a grey border thinned until its channels over white sit one step below the lightest
+    faint = (255 - (lightest - 1)) / GREY_DEPTH
+    check("a faint border still darker than the lightest",
+          _unfilled(_box(fill=[0, 0, 0, 0], stroke=[136, 136, 136, faint])), ["unfilled"])
+    check("a box one pixel above the minimum size",
+          _unfilled(_box(fill=[0, 0, 0, 0], stroke=GREY, w=check_page.BOX_MIN_W + 1, h=check_page.BOX_MIN_H + 1)),
+          ["unfilled"])
+    # a 200 grey fill thinned until its channels over white sit halfway between the lightest and white
+    thinned = (255 - lightest) / (255 - 200) / 2
+    check("a neutral fill thinned by fill-opacity",
+          _unfilled(_box(fill=[200, 200, 200, 1], fill_opacity=thinned, stroke=GREY)), ["unfilled"])
+    found = check_page.geometry_findings(_measured([], frame=(50, 20, 800, 400), figure="fig-3",
+                                                   boxes=[_box(fill=[0, 0, 0, 0], stroke=GREY, x=150, y=120)]))
+    check("the figure, position in the frame and border are named",
+          [f.startswith("fig-3:") and "box at 100,100" in f and "#888888 border" in f for f in found], [True])
+
+
+def test_unfilled_box_quiet():
+    lightest = check_page.UNFILLED_LIGHTEST
+    check("a neutral fill one step darker than the lightest",
+          _unfilled(_box(fill=[lightest - 1] * 3 + [1], stroke=GREY)), [])
+    check("a pale neutral fill", _unfilled(_box(fill=[243, 242, 239, 1], stroke=GREY)), [])
+    check("the same 200 grey fill at full fill-opacity", _unfilled(_box(fill=[200, 200, 200, 1], stroke=GREY)), [])
+    check("a fill whose darkest channel alone is below the lightest",
+          _unfilled(_box(fill=[255, 255, lightest - 1, 1], stroke=GREY)), [])
+    check("a dashed border", _unfilled(_box(fill=[0, 0, 0, 0], stroke=GREY, dashed=True)), [])
+    check("a gradient fill", _unfilled(_box(fill=None, stroke=GREY)), [])
+    check("no stroke", _unfilled(_box(fill=[0, 0, 0, 0], stroke=None)), [])
+    check("a stroke of none", _unfilled(_box(fill=[0, 0, 0, 0], stroke=[0, 0, 0, 0])), [])
+    # a grey border thinned until its channels over white sit halfway between the lightest and white
+    faint = (255 - lightest) / GREY_DEPTH / 2
+    check("a border too faint to tell from the page", _unfilled(_box(fill=[0, 0, 0, 0], stroke=[136, 136, 136, faint])), [])
+    check("a shape at the minimum size",
+          _unfilled(_box(fill=[0, 0, 0, 0], stroke=GREY, w=check_page.BOX_MIN_W, h=check_page.BOX_MIN_H)), [])
+    check("a box at the minimum height, wide enough", _unfilled(_box(fill=[0, 0, 0, 0], stroke=GREY, h=check_page.BOX_MIN_H)), [])
+    check("a box at the minimum width, tall enough", _unfilled(_box(fill=[0, 0, 0, 0], stroke=GREY, w=check_page.BOX_MIN_W)), [])
+    check("a coloured border with no fill is reported once, as untinted", _unfilled(_box(fill=[0, 0, 0, 0])), ["untinted"])
 
 
 def test_untinted_box_fires():

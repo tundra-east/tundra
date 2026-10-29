@@ -4,8 +4,8 @@ Two kinds of check run:
 - in the page's markup: element ids used twice (a second marker with the same id points every arrow at the first),
   and a caption that ends in a gathered list of source identifiers instead of citing each sentence;
 - in a headless Chromium-family browser at 1280 px: text cut off by its figure's edge, text running past the box it sits in,
-  two labels drawn over each other, a page wider than the window,
-  and a box with a coloured solid border but no tint of colour behind it.
+  two labels drawn over each other, a page wider than the window, a column of text wider than TEXT_MAX_W,
+  a box with a coloured solid border but no tint of colour behind it, and a box with a neutral solid border and no fill.
 
 What it cannot see is still found by looking at the screenshots: a line drawn through a label, crossing lines, a missing arrowhead.
 With --shots it also writes those screenshots, light and dark, one window apart down the whole page, and prints their paths.
@@ -47,6 +47,12 @@ BOX_MIN_H = 16.0
 # measured fills of coloured boxes fell at 1 or at 12 and above, with nothing between
 BORDER_CHROMA_MIN = 40.0
 TINT_CHROMA_MAX = 8.0
+# a neutral fill whose darkest channel, laid over white, is at least this cannot be told from the page behind it.
+# measured neutral fills fell at 220-249 or at 250 and above
+UNFILLED_LIGHTEST = 250
+# paragraphs wider than this at WIDTH read as text run to the window's edge.
+# measured pages had their widest paragraph at 946-1048 px or at 1108 px and above
+TEXT_MAX_W = 1100.0
 
 BROWSER_PATHS = (
     r"C:\Program Files\Google\Chrome\Application\chrome.exe",
@@ -72,7 +78,10 @@ MEASURE_JS = r"""
 <script>
 addEventListener('load', () => {
   const root = document.documentElement;
-  const out = {page: {scrollWidth: root.scrollWidth, clientWidth: root.clientWidth, scrollHeight: root.scrollHeight}, svgs: []};
+  // a paragraph is a block as wide as its column, so the widest one is the width of the page's text column
+  let textWidth = 0;
+  document.querySelectorAll('p, li, figcaption').forEach(e => { textWidth = Math.max(textWidth, e.getBoundingClientRect().width); });
+  const out = {page: {scrollWidth: root.scrollWidth, clientWidth: root.clientWidth, scrollHeight: root.scrollHeight, textWidth}, svgs: []};
   const box = r => ({x: r.left, y: r.top, w: r.width, h: r.height});
   // a colour in any CSS syntax read back as [r, g, b, alpha] by painting one pixel,
   // [0, 0, 0, 0] for none, and null for what is not a plain colour, such as a gradient
@@ -222,13 +231,28 @@ def _untinted(box):
     return tint if tint <= TINT_CHROMA_MAX else None
 
 
+def _unfilled(box):
+    """True when a box has a visible solid border and nothing behind it that can be told from the page.
+    A coloured border never reaches it, since geometry_findings reports such a box as untinted first."""
+    if box["dashed"] or box["fill"] is None or box["stroke"] is None:
+        return False
+    if box["w"] <= BOX_MIN_W or box["h"] <= BOX_MIN_H:
+        return False
+    if min(_over_white(box["stroke"])) >= UNFILLED_LIGHTEST:
+        return False
+    return min(_over_white(box["fill"], box["fillOpacity"])) >= UNFILLED_LIGHTEST
+
+
 def geometry_findings(measured):
     """The findings from what the browser measured: clipped text, text past its box, overlapping labels, a page too wide,
-    and coloured borders with no tint behind them."""
+    a text column too wide, coloured borders with no tint behind them, and neutral borders with no fill."""
     found = []
     page = measured.get("page") or {}
     if page.get("scrollWidth", 0) > page.get("clientWidth", 0) + TOLERANCE:
         found.append("the page is %d px wide in a %d px window, so it scrolls sideways" % (page["scrollWidth"], page["clientWidth"]))
+    if page.get("textWidth", 0) > TEXT_MAX_W + TOLERANCE:
+        found.append("paragraphs run %d px wide in a %d px window; cap the page's main column at about 1040 px and centre it"
+                     % (page["textWidth"], WIDTH))
     for i, svg in enumerate(measured.get("svgs") or []):
         where = svg.get("figure") or "svg %d" % (i + 1)
         frame = svg["frame"]
@@ -256,6 +280,9 @@ def geometry_findings(measured):
             if tint is not None:
                 found.append("%s: the box at %.0f,%.0f has a #%02x%02x%02x border but no tint behind it (fill chroma %.0f); give it a pale fill of the border's colour"
                              % (where, b["x"] - frame["x"], b["y"] - frame["y"], b["stroke"][0], b["stroke"][1], b["stroke"][2], tint))
+            elif _unfilled(b):
+                found.append("%s: the box at %.0f,%.0f has a #%02x%02x%02x border but no fill; give it a pale neutral fill"
+                             % (where, b["x"] - frame["x"], b["y"] - frame["y"], b["stroke"][0], b["stroke"][1], b["stroke"][2]))
     return found
 
 
