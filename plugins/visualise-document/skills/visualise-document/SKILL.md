@@ -68,6 +68,15 @@ Do not stop to confirm the list. The person usually has not read the source eith
 
 Load `artifact-diagramming` and `dataviz` with the Skill tool and follow them for every figure. Neither is in every session — `artifact-diagramming` comes only with Artifacts, and either can be turned off — so when one cannot be loaded, draw without it rather than stop: the rules below and step 9's checks still hold. Name the missing one in the page's header and in the report. Without `dataviz` no palette can be validated, so use only the status colours (good `#0ca30c`, warning `#fab219`, critical `#d03b3b`), the first categorical slot (`#2a78d6`, `#3987e5` in dark) and neutrals, and say that the palette was not validated.
 
+Without `artifact-diagramming`:
+
+- Draw every figure as inline SVG, working out each box's and edge's coordinates yourself, not as boxes that HTML and CSS lay out. Only SVG lets an edge run back to an earlier step or across to a distant one, so a loop or a dependency is drawn rather than written into a box, and step 9's checks measure only SVG.
+- Size each figure's `viewBox` to its own content and cap its displayed width at that size, so a small figure is not stretched to the page's width.
+- Draw what moves. When one step feeds another — data, a cache, a file — that dependency is an edge, labelled with what it carries.
+- A box holds a label of a few words. A sentence of explanation goes in the caption.
+
+For every figure:
+
 - Pick each figure's form from its claim, as those skills describe, and validate any categorical palette with the script `dataviz` provides, in light and dark.
 - The status colours keep one meaning across the whole page — critical for a failure or an error, good for a success, warning for a warning or a step that needs a person — and appear only with those meanings, each beside a symbol or a word. What changed or was added takes the first categorical slot, and what is unchanged or out of scope is grey or dashed.
 - One question and one level per figure. A figure that shows both where a change was made and how behaviour changes is two figures: draw the whole first — every step, marking which ones changed — then each part worth a closer look as a figure of its own.
