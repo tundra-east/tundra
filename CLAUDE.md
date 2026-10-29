@@ -16,6 +16,7 @@ plugins/<name>/                     a plugin, with everything it needs inside it
 tools/pre_publish_check.py          the publish gates; tools/README.md says what each one catches
 tools/run_tests.py                  every *_tests.py under a tests/ directory
 .githooks/pre-push                  runs both before a push
+.githooks/pre-commit                runs the gates a single commit must pass
 .github/workflows/checks.yml        runs both again after one, on Linux and Windows
 README.md                           the English README, translated by README.zh-TW.md and README.zh-CN.md
 docs/<plugin>/                      the root READMEs' pictures; docs/issue-to-pr/ also holds the issue-to-pr README and its translations
@@ -55,7 +56,7 @@ A check is trusted only after a known-answer case made it fail, drawn from every
 - **Editing a skill or agent**: edit the `.md`, then run `/reload-plugins` in a consumer session to pick it up. There is nothing to build.
 - **Releasing**: bump only the plugins whose content changed, in their `plugin.json`; the push to `main` is the release.
 - **Loading the plugins from a clone**: `claude --plugin-dir ./plugins/<name>` loads one plugin as `<name>@inline`, and `claude --plugin-dir ./plugins` loads them all. Never `/plugin marketplace add` the clone: it is a marketplace named `tundra`, so adding it replaces the `tundra` you installed from without warning, and its plugins then fail with `Plugin <name> not found in marketplace tundra`.
-- **The gates**: enable the hook once per clone with `git config core.hooksPath .githooks`. It runs `python tools/pre_publish_check.py` and then `python tools/run_tests.py`, and it is the only thing that stops a push; `checks.yml` reports after it on Linux and Windows. The version gate diffs the published ref against `HEAD`, so it sees only committed work. What each gate catches is in `tools/README.md`; anything none of them covers is prose on purpose.
+- **The gates**: enable the hook once per clone with `git config core.hooksPath .githooks`. It runs `python tools/pre_publish_check.py` and then `python tools/run_tests.py`, and it is the only thing that stops a push; the pre-commit hook runs the `json`, `frontmatter`, `descriptions` and `leaks` gates on every commit, because a push carries every commit's leak; `checks.yml` reports after it on Linux and Windows. The version gate diffs the published ref against `HEAD`, so it sees only committed work. What each gate catches is in `tools/README.md`; anything none of them covers is prose on purpose.
 - **A plugin hook** goes in `hooks/hooks.json` at the plugin root, not inside `.claude-plugin/`, or in a file that `plugin.json`'s `hooks` field names; a hook file in any other place silently never loads.
 - **Skill evals**: a skill's `evals/evals.json` runs through `skill-creator`'s grader flow, with and without the skill, at least three runs per arm on the rule that changed; nothing runs them in CI. The traps of the eval tools are in the maintainer's working notes.
 

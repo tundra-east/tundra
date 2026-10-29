@@ -52,3 +52,5 @@ CI (`.github/workflows/checks.yml`) runs both files, but this repository publish
 git config core.hooksPath .githooks     # once per clone
 git push --no-verify                    # deliberate bypass
 ```
+
+The same setting also enables a pre-commit hook, which runs only `json`, `frontmatter`, `descriptions` and `leaks` (`pre_publish_check.py --only=...`). A leak committed and fixed in a later commit still reaches the public remote, because a push carries the whole history, so it has to be stopped at the commit. The `versions` and `translations` gates stay in pre-push, since work in progress is committed before its version is bumped and before its translations catch up. Bypass it deliberately with `git commit --no-verify`.

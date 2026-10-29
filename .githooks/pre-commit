@@ -1,0 +1,27 @@
+#!/bin/sh
+# The gates a commit itself must pass. A leak committed and fixed in a later commit
+# still reaches the public remote, because a push carries the whole history.
+# The version and translation gates stay in pre-push: work in progress is committed
+# before its version is bumped and before its translations are brought up to date.
+#
+# Enable once per clone:  git config core.hooksPath .githooks
+# Bypass deliberately:    git commit --no-verify
+
+set -e
+
+PY=""
+for candidate in python python3 py; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    PY="$candidate"
+    break
+  fi
+done
+
+if [ -z "$PY" ]; then
+  echo "pre-commit: no Python on PATH, skipping the gates." >&2
+  exit 0
+fi
+
+ROOT="$(git rev-parse --show-toplevel)"
+
+"$PY" "$ROOT/tools/pre_publish_check.py" "$ROOT" --only=json,frontmatter,descriptions,leaks

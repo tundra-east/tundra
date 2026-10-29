@@ -500,10 +500,18 @@ def run(root, names=None):
 
 
 def main(argv):
-    root = os.path.abspath(argv[1]) if len(argv) > 1 else os.getcwd()
-    results = run(root)
+    # --only=a,b runs those gates alone, for a pre-commit hook that must not run the release gates on work in progress
+    only = [a.split("=", 1)[1] for a in argv[1:] if a.startswith("--only=")]
+    names = [n for part in only for n in part.split(",") if n]
+    unknown = [n for n in names if n not in GATES]
+    if unknown:
+        print(f"unknown gate(s): {', '.join(unknown)}; known: {', '.join(GATES)}")
+        return 2
+    paths = [a for a in argv[1:] if not a.startswith("--")]
+    root = os.path.abspath(paths[0]) if paths else os.getcwd()
+    results = run(root, names or None)
     total = 0
-    for name in GATES:
+    for name in results:
         failures = results[name]
         total += len(failures)
         mark = "FAIL" if failures else "ok  "
@@ -513,7 +521,7 @@ def main(argv):
     for note in NOTES:
         print(f"         {note}")
     print()
-    print(f"{total} failure(s) across {len(GATES)} gates"
+    print(f"{total} failure(s) across {len(results)} gates"
           + (f", {len(NOTES)} skipped" if NOTES else ""))
     return 1 if total else 0
 

@@ -463,6 +463,58 @@ def main():
             else:
                 ok(f"{label}: prints no failing gate", "[FAIL]" not in printed, f"printed {printed!r}")
 
+        print("\nmain runs only the gates --only names:")
+        json_root = build_fixture(os.path.join(tmp, "main-bad-json"),
+                                  manifest_json='{"name": "demo-plugin", "version": "1.0.0",}')
+        # the working directory is the clean fixture throughout,
+        # so a root taken from the wrong argv item flips the result.
+        # each expected set is the distinct names the argv carries, and with no --only it is every gate.
+        only_invocations = (
+            ("--only=leaks on a json defect", [prog, json_root, "--only=leaks"], 0, {"leaks"}),
+            ("--only=json on a json defect", [prog, json_root, "--only=json"], 1, {"json"}),
+            ("--only=json,leaks", [prog, json_root, "--only=json,leaks"], 1, {"json", "leaks"}),
+            ("--only=json --only=leaks", [prog, json_root, "--only=json", "--only=leaks"], 1, {"json", "leaks"}),
+            ("--only=json, with an empty piece", [prog, json_root, "--only=json,"], 1, {"json"}),
+            ("root after --only=json", [prog, "--only=json", json_root], 1, {"json"}),
+            ("no --only on a clean fixture", [prog, clean_root], 0, set(check.GATES)),
+        )
+        os.chdir(clean_root)
+        try:
+            for label, argv, expected_rc, expected_gates in only_invocations:
+                rc, printed = captured(check.main, argv)
+                lines = printed.splitlines()
+                ran = [line.split("]", 1)[1].strip() for line in lines if line.startswith(("[ok", "[FAIL"))]
+                ok(f"{label}: returns {expected_rc}", rc == expected_rc, f"returned {rc}")
+                ok(f"{label}: runs {sorted(expected_gates)}",
+                   sorted(ran) == sorted(expected_gates), f"ran {ran}")
+                ok(f"{label}: summary counts {len(expected_gates)} gates",
+                   f"failure(s) across {len(expected_gates)} gates" in printed, f"printed {printed!r}")
+                if expected_rc:
+                    ok(f"{label}: prints the json failure", "[FAIL] json" in lines, f"printed {printed!r}")
+                else:
+                    ok(f"{label}: prints no failing gate", "[FAIL]" not in printed, f"printed {printed!r}")
+
+            rc, printed = captured(check.main, [prog, json_root, "--only=leaks,nope"])
+            ok("an unknown name: returns 2", rc == 2, f"returned {rc}")
+            ok("an unknown name: names only the unknown one",
+               "unknown gate(s): nope;" in printed, f"printed {printed!r}")
+            ok("an unknown name: lists the known gates",
+               f"known: {', '.join(check.GATES)}" in printed, f"printed {printed!r}")
+            ok("an unknown name: runs no gate",
+               not any(line.startswith(("[ok", "[FAIL")) for line in printed.splitlines()),
+               f"printed {printed!r}")
+        finally:
+            os.chdir(cwd)
+
+        repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        with open(os.path.join(repo, ".githooks", "pre-commit"), encoding="utf-8") as f:
+            hook_only = [arg.split("=", 1)[1] for arg in f.read().split() if arg.startswith("--only=")]
+        hook_names = [n for part in hook_only for n in part.split(",") if n]
+        ok("the pre-commit hook passes --only", hook_names != [], f"found {hook_only}")
+        ok("every gate the pre-commit hook names exists",
+           all(n in check.GATES for n in hook_names),
+           f"unknown: {[n for n in hook_names if n not in check.GATES]}")
+
         print("\nGate coverage:")
         covered = {"json", "frontmatter", "descriptions", "leaks", "versions", "translations"}
         ok("every gate owns at least one known-answer case",
