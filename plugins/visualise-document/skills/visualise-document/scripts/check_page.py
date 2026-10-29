@@ -8,11 +8,13 @@ Two kinds of check run:
   and a box with a coloured solid border but no tint of colour behind it.
 
 What it cannot see is still found by looking at the screenshots: a line drawn through a label, crossing lines, a missing arrowhead.
+With --shots it also writes those screenshots, light and dark, one window apart down the whole page, and prints their paths.
 
 Usage:
-    python check_page.py <page.html> [--browser <path>]
+    python check_page.py <page.html> [--browser <path>] [--shots <folder>]
 
-Exit status 0 when nothing is found, 1 when something is, 2 when no browser can be found (the markup checks still print).
+Exit status 0 when nothing is found, 1 when something is,
+2 when no browser can be found or, with --shots, when no browser writes a screenshot (the markup checks still print).
 """
 
 import argparse
@@ -32,6 +34,7 @@ EXIT_FOUND = 1
 EXIT_NO_BROWSER = 2
 
 WIDTH = 1280
+SHOT_HEIGHT = 1400
 # a measured edge within this many pixels of its limit is rounding, not a defect
 TOLERANCE = 1.0
 # two labels overlap only when they share more than this in both directions, so stacked lines that touch do not count
@@ -68,7 +71,8 @@ GATHERED = re.compile(r"(?:^|[\u3002\uff01\uff1f)\uff09]|[.!?]\s)\s*(%s(?:\s*[\u
 MEASURE_JS = r"""
 <script>
 addEventListener('load', () => {
-  const out = {page: {scrollWidth: document.documentElement.scrollWidth, clientWidth: document.documentElement.clientWidth}, svgs: []};
+  const root = document.documentElement;
+  const out = {page: {scrollWidth: root.scrollWidth, clientWidth: root.clientWidth, scrollHeight: root.scrollHeight}, svgs: []};
   const box = r => ({x: r.left, y: r.top, w: r.width, h: r.height});
   // a colour in any CSS syntax read back as [r, g, b, alpha] by painting one pixel,
   // [0, 0, 0, 0] for none, and null for what is not a plain colour, such as a gradient
@@ -255,27 +259,34 @@ def geometry_findings(measured):
     return found
 
 
-def find_browser(given=None):
+def find_browsers(given=None):
+    """Every Chromium-family browser on this machine, in the order to try them, or the given one alone."""
     if given:
-        return given if os.path.isfile(given) else None
-    for path in BROWSER_PATHS:
-        if os.path.isfile(path):
-            return path
+        return [given] if os.path.isfile(given) else []
+    found = [path for path in BROWSER_PATHS if os.path.isfile(path)]
     for name in BROWSER_NAMES:
         path = shutil.which(name)
-        if path:
-            return path
-    return None
+        if path and path not in found:
+            found.append(path)
+    return found
+
+
+def find_browser(given=None):
+    browsers = find_browsers(given)
+    return browsers[0] if browsers else None
+
+
+def _inject(page_text, snippet):
+    """The page with snippet placed just before </head>, or at the very start when the page has no head."""
+    injected = re.sub(r"</head>", lambda _: snippet + "</head>", page_text, count=1, flags=re.IGNORECASE)
+    return injected if injected != page_text else snippet + page_text
 
 
 def measure(page_text, browser):
     """Render a copy of the page with the measuring script injected and read back what it measured."""
-    injected = re.sub(r"</head>", lambda _: MEASURE_JS + "</head>", page_text, count=1, flags=re.IGNORECASE)
-    if injected == page_text:
-        injected = MEASURE_JS + page_text
     with tempfile.TemporaryDirectory() as tmp:
         copy = pathlib.Path(tmp) / "page.html"
-        copy.write_text(injected, encoding="utf-8", newline="\n")
+        copy.write_text(_inject(page_text, MEASURE_JS), encoding="utf-8", newline="\n")
         args = [browser, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--virtual-time-budget=3000",
                 "--window-size=%d,1000" % WIDTH, "--user-data-dir=%s" % (pathlib.Path(tmp) / "profile"),
                 "--dump-dom", copy.resolve().as_uri()]
@@ -287,25 +298,95 @@ def measure(page_text, browser):
     return json.loads(html.unescape(m.group(1)))
 
 
+def measure_with_any(page_text, browsers):
+    """What the first browser able to render the page measured, with that browser, or (None, None)."""
+    for browser in browsers:
+        try:
+            return measure(page_text, browser), browser
+        except (RuntimeError, OSError, subprocess.TimeoutExpired):
+            continue
+    return None, None
+
+
+def shot_offsets(height):
+    """The scroll offsets whose windows together cover a page of this height."""
+    return list(range(0, max(int(height), 1), SHOT_HEIGHT))
+
+
+def shot_args(browser, page_uri, png, profile, dark):
+    args = [browser, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--virtual-time-budget=3000",
+            "--window-size=%d,%d" % (WIDTH, SHOT_HEIGHT), "--user-data-dir=%s" % profile, "--screenshot=%s" % png]
+    if dark:
+        args += ["--force-dark-mode", "--blink-settings=preferredColorScheme=0"]
+    return args + [page_uri]
+
+
+def _shoot(page_text, height, browser, out):
+    """Every screenshot this browser writes for the page, or None as soon as one is missing."""
+    written = []
+    with tempfile.TemporaryDirectory() as tmp:
+        # a profile of its own, since a headless call can hand off to the user's running browser and write nothing
+        profile = pathlib.Path(tmp) / "profile"
+        for offset in shot_offsets(height):
+            copy = pathlib.Path(tmp) / ("page-%d.html" % offset)
+            # the page is moved up instead of scrolled, since a headless screenshot always shows the top of the page
+            shifted = _inject(page_text, "<style>body{transform:translateY(-%dpx)}</style>" % offset)
+            copy.write_text(shifted, encoding="utf-8", newline="\n")
+            for mode in ("light", "dark"):
+                png = (out / ("%s-%05d.png" % (mode, offset))).resolve()
+                if png.exists():
+                    png.unlink()
+                subprocess.run(shot_args(browser, copy.resolve().as_uri(), png, profile, mode == "dark"),
+                               capture_output=True, timeout=120)
+                if not png.is_file():
+                    return None
+                written.append(png)
+    return written
+
+
+def screenshots(page_text, height, browsers, out_dir):
+    """Light and dark screenshots covering the page from the first browser that writes them all, with that browser."""
+    out = pathlib.Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    for browser in browsers:
+        written = _shoot(page_text, height, browser, out)
+        if written:
+            return written, browser
+    return [], None
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("page")
     parser.add_argument("--browser", help="a Chromium-family browser to measure with, when it is not in a usual place")
+    parser.add_argument("--shots", metavar="FOLDER", help="also write light and dark screenshots of the whole page into FOLDER")
     args = parser.parse_args(argv)
     # labels are in the page's language, and a Windows console cannot print most of them
     sys.stdout.reconfigure(errors="backslashreplace")
 
     text = pathlib.Path(args.page).read_text(encoding="utf-8")
     found = markup_findings(text)
-    browser = find_browser(args.browser)
-    if browser:
-        found += geometry_findings(measure(text, browser))
+    browsers = find_browsers(args.browser)
+    measured, _ = measure_with_any(text, browsers)
+    if measured:
+        found += geometry_findings(measured)
     for line in found:
         print(line)
-    if not browser:
+    if not browsers:
         print("no Chromium-family browser found, so nothing was measured; only the markup was checked")
         return EXIT_NO_BROWSER
+    if not measured:
+        print("no browser returned measurements (tried %s), so only the markup was checked" % ", ".join(browsers))
+        return EXIT_NO_BROWSER
     print("%d finding(s)" % len(found))
+    if args.shots:
+        pngs, used = screenshots(text, measured["page"].get("scrollHeight", SHOT_HEIGHT), browsers, args.shots)
+        if not pngs:
+            print("no browser wrote a screenshot (tried %s), so the page was not checked by eye" % ", ".join(browsers))
+            return EXIT_FOUND if found else EXIT_NO_BROWSER
+        print("%d screenshot(s) by %s, top of the page first:" % (len(pngs), used))
+        for png in pngs:
+            print(png)
     return EXIT_FOUND if found else EXIT_OK
 
 

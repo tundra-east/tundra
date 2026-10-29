@@ -2,6 +2,8 @@
 
 The markup checks run over small synthetic pages, and the geometry checks over synthetic measurements,
 so nothing here opens a browser: the measuring script is exercised by hand against real pages instead.
+The browser fallbacks are exercised with sys.executable and a stubbed subprocess.run standing in for a browser,
+so nothing opens a real browser there either.
 Each check has cases that must fire and cases that must stay quiet, built one variation at a time.
 
 Pure stdlib, ASCII-only source and output (Windows cp1252 console).
@@ -9,8 +11,15 @@ Exits non-zero on any failure. Run from anywhere:
     python tests/check_page_tests.py
 """
 
+import contextlib
+import io
 import os
+import pathlib
+import subprocess
 import sys
+import tempfile
+import urllib.parse
+import urllib.request
 
 # import the module under test from the sibling scripts/ dir without installing
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -101,6 +110,95 @@ def _untinted(*boxes, **kw):
 
 # laid over white, the red's channels close by its spread times the fill's alpha
 SPREAD = 208 - 59
+
+
+# ----- browser fallbacks -----------------------------------------------------------
+
+# the Python running this suite stands in for a browser:
+# a real executable that rejects the browser's flags, so it measures nothing and writes no screenshot
+NOT_A_BROWSER = sys.executable
+
+PLAIN = "<html><head></head><body></body></html>"
+DUPLICATED = '<html><head></head><body><i id="a"></i><i id="a"></i></body></html>'
+MEASURED = {"page": {"scrollWidth": 1264, "clientWidth": 1264, "scrollHeight": check_page.SHOT_HEIGHT}, "svgs": []}
+
+
+def _main(page_text, *flags, browser=NOT_A_BROWSER, shots=None):
+    """The exit status of check_page.main on a temporary copy of the page, with its printed lines kept out of the report.
+    shots, when given, is the folder passed to --shots."""
+    with tempfile.TemporaryDirectory() as tmp:
+        page = os.path.join(tmp, "page.html")
+        with open(page, "w", encoding="utf-8", newline="\n") as f:
+            f.write(page_text)
+        argv = [page, "--browser", browser]
+        for flag in flags:
+            # --shots names a folder inside the temporary one
+            argv += [flag, os.path.join(tmp, "shots")] if flag == "--shots" else [flag]
+        if shots is not None:
+            argv += ["--shots", shots]
+        # main reconfigures sys.stdout, which a StringIO cannot do
+        out = io.TextIOWrapper(io.BytesIO(), encoding="utf-8")
+        with contextlib.redirect_stdout(out):
+            return check_page.main(argv)
+
+
+def _main_measured(page_text, *flags, measured=MEASURED, **kwargs):
+    """_main with a browser that returns these measurements, and writes no screenshot unless subprocess.run is stubbed."""
+    real = check_page.measure
+    check_page.measure = lambda page_text, browser: measured
+    try:
+        return _main(page_text, *flags, **kwargs)
+    finally:
+        check_page.measure = real
+
+
+def _measure_with_first_failing(error, browsers):
+    """measure_with_any with browser "a" raising error and every other browser measuring the page."""
+    def fake(page_text, browser):
+        if browser == "a":
+            raise error
+        return MEASURED
+    real = check_page.measure
+    check_page.measure = fake
+    try:
+        return check_page.measure_with_any(PLAIN, browsers)
+    finally:
+        check_page.measure = real
+
+
+# the page each screenshot was taken of, by the screenshot's path, as the fake browser read it
+_received = {}
+
+
+def _fake_run(args, **kwargs):
+    """A stand-in for subprocess.run: browser "a" writes nothing, "b" every shot, "c" the light shots only.
+    The browser is named by its file name, so a real file called "b" works as --browser."""
+    browser = os.path.basename(args[0])
+    png = [a for a in args if a.startswith("--screenshot=")][0][len("--screenshot="):]
+    page = urllib.request.url2pathname(urllib.parse.urlparse(args[-1]).path)
+    with open(page, encoding="utf-8") as f:
+        _received[png] = f.read()
+    dark = "--force-dark-mode" in args
+    if browser == "b" or (browser == "c" and not dark):
+        with open(png, "wb") as f:
+            f.write(b"png")
+
+
+@contextlib.contextmanager
+def _fake_browsers():
+    real = subprocess.run
+    subprocess.run = _fake_run
+    _received.clear()
+    try:
+        yield _received
+    finally:
+        subprocess.run = real
+
+
+def _expected_shots(out, height):
+    # the names _shoot writes, a light and a dark shot for each offset
+    return [(pathlib.Path(out) / ("%s-%05d.png" % (mode, offset))).resolve()
+            for offset in check_page.shot_offsets(height) for mode in ("light", "dark")]
 
 
 # ----- tests -----------------------------------------------------------------------
@@ -201,6 +299,119 @@ def test_untinted_box_quiet():
 def test_find_browser():
     check("a given path that does not exist", check_page.find_browser(os.path.join(_HERE, "no-such-browser")), None)
     check("a given path that exists", check_page.find_browser(os.path.abspath(__file__)), os.path.abspath(__file__))
+
+
+def test_find_browsers():
+    check("a given path that does not exist", check_page.find_browsers(os.path.join(_HERE, "no-such-browser")), [])
+    check("a given path that exists, alone", check_page.find_browsers(os.path.abspath(__file__)), [os.path.abspath(__file__)])
+
+
+def test_inject():
+    check("just before </head>", check_page._inject("<html><head></head><body></body></html>", "<x>"),
+          "<html><head><x></head><body></body></html>")
+    check("before an upper-case </HEAD>", check_page._inject("<html><head></HEAD><body></body></html>", "<x>"),
+          "<html><head><x></head><body></body></html>")
+    check("only the first of two heads", check_page._inject("<head></head><head></head>", "<x>"),
+          "<head><x></head><head></head>")
+    check("a page with no head gets it at the start", check_page._inject("<body></body>", "<x>"), "<x><body></body>")
+
+
+def test_shot_offsets():
+    tall = check_page.SHOT_HEIGHT
+    check("a page of height 0", check_page.shot_offsets(0), [0])
+    check("a page of height 1", check_page.shot_offsets(1), [0])
+    check("a page exactly one window tall", check_page.shot_offsets(tall), [0])
+    check("one pixel past a window", check_page.shot_offsets(tall + 1), [0, tall])
+
+
+def test_shot_args():
+    light = check_page.shot_args("browser", "file:///page.html", "out.png", "profile", False)
+    dark = check_page.shot_args("browser", "file:///page.html", "out.png", "profile", True)
+    check("the browser comes first", light[0], "browser")
+    check("headless", "--headless=new" in light, True)
+    check("the page comes last", light[-1], "file:///page.html")
+    check("the window is WIDTH by SHOT_HEIGHT",
+          "--window-size=%d,%d" % (check_page.WIDTH, check_page.SHOT_HEIGHT) in light, True)
+    check("a profile of its own", "--user-data-dir=profile" in light, True)
+    check("the screenshot path", "--screenshot=out.png" in light, True)
+    dark_flags = ["--force-dark-mode", "--blink-settings=preferredColorScheme=0"]
+    check("dark adds both dark flags", [f in dark for f in dark_flags], [True, True])
+    check("light carries neither dark flag", [f in light for f in dark_flags], [False, False])
+    check("dark keeps the page last", dark[-1], "file:///page.html")
+
+
+def test_measure_with_any():
+    check("no browser measures", check_page.measure_with_any(PLAIN, [NOT_A_BROWSER]), (None, None))
+    check("past a browser raising RuntimeError",
+          _measure_with_first_failing(RuntimeError("no measurements"), ["a", "b"]), (MEASURED, "b"))
+    check("past a browser raising OSError", _measure_with_first_failing(OSError("cannot run"), ["a", "b"]), (MEASURED, "b"))
+    check("past a browser timing out",
+          _measure_with_first_failing(subprocess.TimeoutExpired("a", 120), ["a", "b"]), (MEASURED, "b"))
+
+
+def test_screenshots():
+    with tempfile.TemporaryDirectory() as tmp:
+        out = os.path.join(tmp, "shots")
+        got = check_page.screenshots(PLAIN, check_page.SHOT_HEIGHT, [NOT_A_BROWSER], out)
+        check("no browser writes a screenshot", got, ([], None))
+    # height 1 needs a single offset, so a light and a dark shot
+    with _fake_browsers() as received:
+        with tempfile.TemporaryDirectory() as out:
+            check("a browser writing every shot", check_page.screenshots(PLAIN, 1, ["b"], out), (_expected_shots(out, 1), "b"))
+        with tempfile.TemporaryDirectory() as out:
+            check("past a browser writing nothing", check_page.screenshots(PLAIN, 1, ["a", "b"], out),
+                  (_expected_shots(out, 1), "b"))
+        with tempfile.TemporaryDirectory() as out:
+            check("past a browser writing the light shot only", check_page.screenshots(PLAIN, 1, ["c", "b"], out),
+                  (_expected_shots(out, 1), "b"))
+        with tempfile.TemporaryDirectory() as out:
+            check("a missing dark shot gives None", check_page._shoot(PLAIN, 1, "c", pathlib.Path(out)), None)
+        with tempfile.TemporaryDirectory() as tmp:
+            # screenshots left by an earlier run at the paths of the first light and dark shots
+            stale = os.path.join(tmp, "light-00000.png")
+            for name in ("light-00000.png", "dark-00000.png"):
+                with open(os.path.join(tmp, name), "wb") as f:
+                    f.write(b"stale")
+            got = check_page.screenshots(PLAIN, 1, ["a"], tmp)
+            check("a stale screenshot is not counted", got, ([], None))
+            check("a stale screenshot is removed", os.path.exists(stale), False)
+        # one pixel past a window needs a second offset, one window down
+        tall = check_page.SHOT_HEIGHT
+        with tempfile.TemporaryDirectory() as out:
+            received.clear()
+            shots = _expected_shots(out, tall + 1)
+            check("a page past one window gets every offset", check_page.screenshots(PLAIN, tall + 1, ["b"], out), (shots, "b"))
+            moved = [p for p in shots if p.name.endswith("-%05d.png" % tall)]
+            check("the copy one window down is moved up a window, light and dark",
+                  ["translateY(-%dpx)" % tall in received.get(str(p), "") for p in moved], [True, True])
+
+
+def test_main_no_measurements():
+    check("no browser returns measurements", _main(PLAIN), check_page.EXIT_NO_BROWSER)
+    check("--shots with no measurements", _main(PLAIN, "--shots"), check_page.EXIT_NO_BROWSER)
+    # a page with a markup finding, and no browser that measures it
+    check("--shots with no measurements and a markup finding", _main(DUPLICATED, "--shots"), check_page.EXIT_NO_BROWSER)
+
+
+def test_main_no_screenshots():
+    check("measured, no screenshot, no finding", _main_measured(PLAIN, "--shots"), check_page.EXIT_NO_BROWSER)
+    check("measured, no screenshot, a markup finding", _main_measured(DUPLICATED, "--shots"), check_page.EXIT_FOUND)
+    check("measured without --shots, no finding", _main_measured(PLAIN), check_page.EXIT_OK)
+
+
+def test_main_screenshots():
+    # a page measured one pixel taller than a window, and a browser file named "b" that writes every shot
+    tall = check_page.SHOT_HEIGHT + 1
+    measured = dict(MEASURED, page=dict(MEASURED["page"], scrollHeight=tall))
+    with _fake_browsers(), tempfile.TemporaryDirectory() as tmp:
+        browser = os.path.join(tmp, "b")
+        with open(browser, "wb"):
+            pass
+        shots = os.path.join(tmp, "shots")
+        check("measured, every screenshot, no finding", _main_measured(PLAIN, measured=measured, browser=browser, shots=shots),
+              check_page.EXIT_OK)
+        check("the folder holds the shots of every offset",
+              sorted(p.resolve() for p in pathlib.Path(shots).glob("*.png")), sorted(_expected_shots(shots, tall)))
 
 
 def _run_all():

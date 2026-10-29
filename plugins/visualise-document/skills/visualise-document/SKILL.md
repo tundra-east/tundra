@@ -66,7 +66,7 @@ Do not stop to confirm the list. The person usually has not read the source eith
 
 ## 5. Draw and write
 
-Load `artifact-diagramming` and `dataviz` with the Skill tool and follow them for every figure. Neither is in every session — `artifact-diagramming` comes only with Artifacts, and either can be turned off — so when one cannot be loaded, draw without it rather than stop: the rules below and step 9's checks still hold. Name the missing one in the page's header and in the report. Without `dataviz` no palette can be validated, so use only the status colours (good `#0ca30c`, warning `#fab219`, critical `#d03b3b`), the first categorical slot (`#2a78d6`, `#3987e5` in dark) and neutrals, and say that the palette was not validated.
+Load `artifact-diagramming` and `dataviz` with the Skill tool and follow them for every figure. Neither is in every session — `artifact-diagramming` comes only with Artifacts, and either can be turned off — so when one cannot be loaded, draw without it rather than stop: the rules below and step 9's checks still hold. Name the missing one in the page's header and in the report. Without `dataviz` no palette can be validated, so use only the status colours (good `#0ca30c`, warning `#fab219`, critical `#d03b3b`), the first categorical slot (`#2a78d6`, `#3987e5` in dark), text in `#0b0b0b` and secondary text in `#52514e` (`#f0efec` and `#c3c2b7` in dark), and neutrals, and say that the palette was not validated.
 
 Without `artifact-diagramming`:
 
@@ -144,19 +144,13 @@ python "${CLAUDE_SKILL_DIR}/scripts/check_page.py" <page>
 
 It reports text cut off by its figure's edge, text running past its box, labels drawn over each other, a page wider than the window, a box with a coloured border and no tint behind it, an id used twice, and a caption ending in a gathered list of passages. Fix every finding and run it again, and run it once more after any later edit to the page, step 8's fixes included. When it finds no browser it checks the markup alone and says so.
 
-Other layout defects — a line through a label, a missing arrowhead, crossing lines, uneven table columns — are found only by looking, not by reading the HTML. Find a Chromium-family browser on this machine (Chrome, Edge, Chromium or Brave, in their usual install locations or on `PATH`), and screenshot the page headless in light and dark:
+Other layout defects — a line through a label, a missing arrowhead, crossing lines, uneven table columns — are found only by looking, not by reading the HTML. The same script screenshots the whole page, light and dark, into a scratch folder away from the page, and prints each image's path:
 
 ```
-<browser> --headless=new --disable-gpu --hide-scrollbars --window-size=1280,<height> --screenshot=<absolute .png> file:///<absolute page>
-dark: add --force-dark-mode --blink-settings=preferredColorScheme=0
+python "${CLAUDE_SKILL_DIR}/scripts/check_page.py" <page> --shots <folder>
 ```
 
-Read each image, fix what is wrong, and shoot again. Some things look like defects and are not:
-
-- A screenshot shows only the initial state. Script that draws after layout needs `--virtual-time-budget=2000`; hover and focus states never show.
-- A long page needs several shots, and no image library may be at hand to crop one. Render copies of the page with `<style>body{transform:translateY(-Npx)}</style>` injected before `</head>`, one per offset a window height apart.
-
-If no browser can be found, say that the page was not checked visually; do not install one.
+Read each image, fix what is wrong, and shoot again. A screenshot shows only the initial state, so hover and focus states never show. If it says no browser wrote a screenshot, say that the page was not checked visually; do not install a browser.
 
 ## 10. Report
 
