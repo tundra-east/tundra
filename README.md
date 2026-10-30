@@ -94,7 +94,7 @@ Turns a document into a page you can read instead of it, with a figure of the fi
 
 <a href="plugins/visualise-document/docs/before-after-light.png"><picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/visualise-document/before-after-dark.png">
-  <img alt="Three passages of a fictional plan beside the figures drawn from them: a state diagram, a bar chart of daily counts with a gap where two days were not recorded, and a banded axis of a shelf's limits" src="docs/visualise-document/before-after-light.png" width="720">
+  <img alt="Three passages of a fictional plan beside the figures drawn from them: a state diagram, a bar chart of daily counts with a gap where two days were not recorded, and a banded axis of a shelf's limits" src="docs/visualise-document/before-after-light.png" width="480">
 </picture></a>
 
 The picture comes from a fictional plan. The model draws each page afresh from its source, so the translations of this page show other runs over the same plan.

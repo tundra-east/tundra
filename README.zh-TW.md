@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 eae76ba276b3463e6c0bfb366d01dd968f002e4a517e74ee75550c08dfb8f86e; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 b4e1352a1248f461a1586fca46cc114bf6c84c60e70d91013a7da71f120914a2; see the root CLAUDE.md "Translations" before editing -->
 <div align="center">
 
 <picture>
@@ -95,7 +95,7 @@
 
 <a href="plugins/visualise-document/docs/before-after-light.zh-TW.png"><picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/visualise-document/before-after-dark.zh-TW.png">
-  <img alt="一份虛構計畫的三段原文，旁邊是由它們畫出的圖：狀態圖、兩天未記錄處留白的每日數量長條圖，以及貨架上限的分區軸線" src="docs/visualise-document/before-after-light.zh-TW.png" width="720">
+  <img alt="一份虛構計畫的三段原文，旁邊是由它們畫出的圖：狀態圖、兩天未記錄處留白的每日數量長條圖，以及貨架上限的分區軸線" src="docs/visualise-document/before-after-light.zh-TW.png" width="480">
 </picture></a>
 
 圖片取自一份虛構的計畫。模型每次都依來源重新畫出頁面，所以這一頁的英文版和簡體中文版，顯示的是同一份計畫另外幾次執行的結果。
