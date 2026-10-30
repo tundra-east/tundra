@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 b7d9f9782fcead8c651fc2d9c8661b7a382970a27825eeffcf0d3435cb4691ea; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 ed101c9a2b5a593a361c6594b013c73cd3503535a7c8383c27d242feecb227d7; see the root CLAUDE.md "Translations" before editing -->
 <div align="center">
 
 <picture>
@@ -62,8 +62,8 @@
 從你的程式碼、你的 prompt 和你的 CLAUDE.md 做一份自我評估，輸出成 HTML 報告。只有你能用 `/whoami:whoami` 啟動它。
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/whoami/thumbnails-dark.png">
-  <img alt="whoami 報告的縮圖：標題與摘要、你做得好和常漏掉的一個面向、一張流程圖，以及表格" src="docs/whoami/thumbnails-light.png" width="360">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/whoami/report-dark.zh-TW.png">
+  <img alt="一份針對兩個虛構 repository 的 whoami 報告：讀取範圍的時間軸、結論，以及你穩定做對和穩定漏掉的一個軸" src="docs/whoami/report-light.zh-TW.png" width="480">
 </picture>
 
 安裝指令：
@@ -77,8 +77,8 @@
 你在某一天或一段日期裡跑過的 session 還留下哪些沒做完的事，逐一對照每個 pull request 和 branch 的即時狀態，並提供一鍵回到每個 session 的連結。
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/remind-me/thumbnails-dark.png">
-  <img alt="remind-me 頁面的縮圖：單日概要、放大一張卡片的期間報告、一個 repository 在整段期間的頁面，以及一個 session" src="docs/remind-me/thumbnails-light.png" width="360">
+  <source media="(prefers-color-scheme: dark)" srcset="plugins/remind-me/docs/overview-dark.zh-TW.jpg">
+  <img alt="虛構一天的概覽：repository 側欄、當天的標題和數字、依 repository 排列的每個 session 時間軸，以及待決定和待做的事" src="plugins/remind-me/docs/overview-light.zh-TW.jpg" width="560">
 </picture>
 
 安裝指令：

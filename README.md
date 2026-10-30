@@ -61,8 +61,8 @@ Install all four at once:
 A self-assessment from your code, your prompts, and your CLAUDE.md, as an HTML report. Only you can start it, with `/whoami:whoami`.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/whoami/thumbnails-dark.png">
-  <img alt="Thumbnails of a whoami report: its header and summary, an axis with what you get right and what you miss, a diagram, and its tables" src="docs/whoami/thumbnails-light.png" width="360">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/whoami/report-dark.png">
+  <img alt="A whoami report on two fictional repositories: a timeline of what was read, the summary, and one axis of what you reliably get right and what you reliably miss" src="docs/whoami/report-light.png" width="480">
 </picture>
 
 Install it with:
@@ -76,8 +76,8 @@ Install it with:
 What you left open in the sessions you ran on a given day or over a range of days, checked against the live state of each pull request and branch, with a quick link back into each session.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/remind-me/thumbnails-dark.png">
-  <img alt="Thumbnails of remind-me pages: a day's overview, a range with one card maximised, a repository over the range, and a session" src="docs/remind-me/thumbnails-light.png" width="360">
+  <source media="(prefers-color-scheme: dark)" srcset="plugins/remind-me/docs/overview-dark.jpg">
+  <img alt="The overview of a fictional day: a side panel of repositories, the day's headline and figures, a timeline of every session by repository, and the decisions and actions left open" src="plugins/remind-me/docs/overview-light.jpg" width="560">
 </picture>
 
 Install it with:
