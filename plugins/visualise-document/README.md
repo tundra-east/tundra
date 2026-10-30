@@ -22,11 +22,13 @@ Run `/reload-plugins` afterwards to activate it.
 
 ## Use
 
-Ask in your own words, for example "visualise this plan" with a file, or run `/visualise-document:visualise-document` with one or more paths, links or ticket keys. Name the page's language if it should differ from your usual one, ask for several sources "as one page" to combine them, and ask for "its linked documents" or name a commit to have those read too; otherwise a linked page, a ticket or a commit the source mentions is listed as not read rather than followed.
+Ask in your own words, such as "visualise this plan" with a file, or run `/visualise-document:visualise-document` with one or more paths, links or ticket keys. In the same request you can also:
 
-The page goes beside a local document, named after it, such as `plan.visual.html` for `plan.md`; for a remote source or a combined page the skill proposes the current folder for you to confirm or change. It opens with the sources and when each was read, then anything it could not read, such as an image or an attachment, then an overview, the topics, and a closing table of the contradictions it found, each also marked where the page shows either side. Run it again after the document changes and it keeps what still holds and redraws the rest.
+- name a language if the page should not be in your usual one
+- ask for several sources "as one page" to combine them
+- ask for "its linked documents", or name a commit, to have those read too; otherwise a linked page, ticket or commit the source mentions is listed on the page as not read
 
-Every page is checked before it is handed over. A fresh subagent that did not write it reads the page against the sources and reports anything the sources do not support and any reason or condition the page dropped. A script then measures the layout in a headless browser, for text cut off or running past its box, labels drawn over each other, a figure without its label and a box with no fill, and takes screenshots in light and dark for the model to look at.
+The page is written beside a local document, such as `plan.visual.html` for `plan.md`. For a remote source or a combined page, the skill proposes a folder for you to confirm. Run it again after the document changes, and it keeps what still holds and redraws the rest.
 
 ## What it reads and what it sends
 
@@ -41,7 +43,7 @@ flowchart TB
     check -- findings --> read
 ```
 
-It reads only the sources you name. A remote one is fetched with whatever tool the session has for it, such as an MCP server for your wiki or tracker; when none can reach it, the skill says so and stops. The model your session runs on reads the sources, and the checking subagent reads them again, so their content goes wherever that model runs, the same way a file does when you ask Claude to read it.
+It reads only the sources you name, and lists on the page anything in them it could not read, such as an image or an attachment. A remote one is fetched with whatever tool the session has for it, such as an MCP server for your wiki or tracker; when none can reach it, the skill says so and stops. The model your session runs on reads the sources, and the checking subagent reads them again, so their content goes wherever that model runs, the same way a file does when you ask Claude to read it.
 
 It writes one HTML file and never edits a source. The page names people, customers and accounts by their role, never shows a credential, and is self-contained, apart from a script library it loads from a CDN when a figure uses one. The layout checks run a browser on this machine against a copy of the page.
 
