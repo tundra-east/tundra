@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 b4e1352a1248f461a1586fca46cc114bf6c84c60e70d91013a7da71f120914a2; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 b7d9f9782fcead8c651fc2d9c8661b7a382970a27825eeffcf0d3435cb4691ea; see the root CLAUDE.md "Translations" before editing -->
 <div align="center">
 
 <picture>
@@ -91,7 +91,7 @@
 
 #### [`visualise-document`](plugins/visualise-document/README.zh-CN.md)
 
-把一份文档变成一个读了就不必再读原文的页面：有形状的段落画成最合适的图，其余写成精简的文字。
+把一份文档变成一个读了就不必再读原文的页面：有形状的内容，例如流程、决策或一组数字，画成最合适的图表，其余写成精简的文字。
 
 <a href="plugins/visualise-document/docs/before-after-light.zh-CN.png"><picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/visualise-document/before-after-dark.zh-CN.png">
