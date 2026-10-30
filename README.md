@@ -60,10 +60,12 @@ Install all four at once:
 
 A self-assessment from your code, your prompts, and your CLAUDE.md, as an HTML report. Only you can start it, with `/whoami:whoami`.
 
+<a href="plugins/whoami/docs/report-overview-light.png">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/whoami/report-dark.png">
   <img alt="A whoami report on two fictional repositories: a timeline of what was read, the summary, and one axis of what you reliably get right and what you reliably miss" src="docs/whoami/report-light.png" width="480">
 </picture>
+</a>
 
 Install it with:
 
@@ -75,10 +77,12 @@ Install it with:
 
 What you left open in the sessions you ran on a given day or over a range of days, checked against the live state of each pull request and branch, with a quick link back into each session.
 
+<a href="plugins/remind-me/docs/overview-light.jpg">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="plugins/remind-me/docs/overview-dark.jpg">
   <img alt="The overview of a fictional day: a side panel of repositories, the day's headline and figures, a timeline of every session by repository, and the decisions and actions left open" src="plugins/remind-me/docs/overview-light.jpg" width="560">
 </picture>
+</a>
 
 Install it with:
 
@@ -92,10 +96,12 @@ Install it with:
 
 Turns a document into a page you can read in place of the original: anything with a shape, such as a flow, a decision or a set of numbers, becomes the diagram or chart that suits it, and the rest becomes concise text.
 
-<a href="plugins/visualise-document/docs/before-after-light.png"><picture>
+<a href="plugins/visualise-document/docs/before-after-light.png">
+<picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/visualise-document/before-after-dark.png">
   <img alt="Three passages of a fictional plan beside the figures drawn from them: a state diagram, a bar chart of daily counts with a gap where two days were not recorded, and a banded axis of a shelf's limits" src="docs/visualise-document/before-after-light.png" width="480">
-</picture></a>
+</picture>
+</a>
 
 The picture comes from a fictional plan. The model draws each page afresh from its source, so the translations of this page show other runs over the same plan.
 

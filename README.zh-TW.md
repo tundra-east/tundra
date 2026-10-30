@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 ed101c9a2b5a593a361c6594b013c73cd3503535a7c8383c27d242feecb227d7; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 542abf6cabde6351192caaf0ace5323f48a61ed78b043904728abee133087011; see the root CLAUDE.md "Translations" before editing -->
 <div align="center">
 
 <picture>
@@ -61,10 +61,12 @@
 
 從你的程式碼、你的 prompt 和你的 CLAUDE.md 做一份自我評估，輸出成 HTML 報告。只有你能用 `/whoami:whoami` 啟動它。
 
+<a href="plugins/whoami/docs/report-overview-light.zh-TW.png">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/whoami/report-dark.zh-TW.png">
   <img alt="一份針對兩個虛構 repository 的 whoami 報告：讀取範圍的時間軸、結論，以及你穩定做對和穩定漏掉的一個軸" src="docs/whoami/report-light.zh-TW.png" width="480">
 </picture>
+</a>
 
 安裝指令：
 
@@ -76,10 +78,12 @@
 
 你在某一天或一段日期裡跑過的 session 還留下哪些沒做完的事，逐一對照每個 pull request 和 branch 的即時狀態，並提供一鍵回到每個 session 的連結。
 
+<a href="plugins/remind-me/docs/overview-light.zh-TW.jpg">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="plugins/remind-me/docs/overview-dark.zh-TW.jpg">
   <img alt="虛構一天的概覽：repository 側欄、當天的標題和數字、依 repository 排列的每個 session 時間軸，以及待決定和待做的事" src="plugins/remind-me/docs/overview-light.zh-TW.jpg" width="560">
 </picture>
+</a>
 
 安裝指令：
 
@@ -93,10 +97,12 @@
 
 把一份文件變成一個讀了就不必再讀原文的頁面：有形狀的內容，例如流程、決策或一組數字，畫成最合適的圖表，其餘寫成精簡的文字。
 
-<a href="plugins/visualise-document/docs/before-after-light.zh-TW.png"><picture>
+<a href="plugins/visualise-document/docs/before-after-light.zh-TW.png">
+<picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/visualise-document/before-after-dark.zh-TW.png">
   <img alt="一份虛構計畫的三段原文，旁邊是由它們畫出的圖：狀態圖、兩天未記錄處留白的每日數量長條圖，以及貨架上限的分區軸線" src="docs/visualise-document/before-after-light.zh-TW.png" width="480">
-</picture></a>
+</picture>
+</a>
 
 圖片取自一份虛構的計畫。模型每次都依來源重新畫出頁面，所以這一頁的英文版和簡體中文版，顯示的是同一份計畫另外幾次執行的結果。
 

@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 ed101c9a2b5a593a361c6594b013c73cd3503535a7c8383c27d242feecb227d7; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 542abf6cabde6351192caaf0ace5323f48a61ed78b043904728abee133087011; see the root CLAUDE.md "Translations" before editing -->
 <div align="center">
 
 <picture>
@@ -61,10 +61,12 @@
 
 根据你的代码、你的 prompt 和你的 CLAUDE.md 做一份自我评估，输出为 HTML 报告。只有你能用 `/whoami:whoami` 启动它。
 
+<a href="plugins/whoami/docs/report-overview-light.zh-CN.png">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/whoami/report-dark.zh-CN.png">
   <img alt="一份针对两个虚构 repository 的 whoami 报告：读取范围的时间线、结论，以及你稳定做对和稳定漏掉的一个轴" src="docs/whoami/report-light.zh-CN.png" width="480">
 </picture>
+</a>
 
 安装命令：
 
@@ -76,10 +78,12 @@
 
 你在某一天或一段日期里运行过的 session 还留下哪些没做完的事，逐一对照每个 pull request 和 branch 的实时状态，并提供一键回到每个 session 的链接。
 
+<a href="plugins/remind-me/docs/overview-light.zh-CN.jpg">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="plugins/remind-me/docs/overview-dark.zh-CN.jpg">
   <img alt="虚构一天的概览：repository 侧边栏、当天的标题和数字、按 repository 排列的每个 session 时间线，以及待决定和待做的事" src="plugins/remind-me/docs/overview-light.zh-CN.jpg" width="560">
 </picture>
+</a>
 
 安装命令：
 
@@ -93,10 +97,12 @@
 
 把一份文档变成一个读了就不必再读原文的页面：有形状的内容，例如流程、决策或一组数字，画成最合适的图表，其余写成精简的文字。
 
-<a href="plugins/visualise-document/docs/before-after-light.zh-CN.png"><picture>
+<a href="plugins/visualise-document/docs/before-after-light.zh-CN.png">
+<picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/visualise-document/before-after-dark.zh-CN.png">
   <img alt="一份虚构计划的三段原文，旁边是由它们画出的图：状态图、在两天未记录处断开的每日数量折线图，以及货架上限的分区轴线" src="docs/visualise-document/before-after-light.zh-CN.png" width="480">
-</picture></a>
+</picture>
+</a>
 
 图片取自一份虚构的计划。模型每次都依据来源重新画出页面，所以这一页的英文版和繁体中文版，显示的是同一份计划另外几次运行的结果。
 
