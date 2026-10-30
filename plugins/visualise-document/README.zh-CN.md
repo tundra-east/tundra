@@ -1,9 +1,9 @@
-<!-- translated from README.md, source sha256 5c5aa64b038cdb84d041f021ffffa4e9639d72997e657f6a712c3b9c8fe4b1b0; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 bd5c6c1bd854b6113a9613e2e27dcacec083b01117a90eb22bd2d744cac0a85a; see the root CLAUDE.md "Translations" before editing -->
 # visualise-document
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 
-把一份文档，或几份一起读的文档，变成一个本地的 HTML 页面，读了它就不必再读原文：凡是有形状的段落，例如一段流程、一组状态、几个选项之间的取舍、随时间变化的数字或一组上限，都画成图；其余写成精简的文字，保留每一个理由和条件，并标出来源里的矛盾。计划、规格、设计笔记、工单、wiki 页面或 log 都可以。
+把一份文档，或几份一起读的文档，变成一个本地的 HTML 页面，读了它就不必再读原文：凡是有形状的内容，例如一段流程、一组状态、几个选项之间的取舍、随时间变化的数字或一组上限，都画成图；其余写成精简的文字，保留每一个理由和条件，并标出来源里的矛盾。计划、规格、设计笔记、工单、wiki 页面或 log 都可以。
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/before-after-dark.zh-CN.png">
@@ -51,7 +51,3 @@ flowchart TB
 Claude Code v2.1.221 或更新版本，因为它画图时使用 `artifact-diagramming` 和 `dataviz` 这两个 skill。`artifact-diagramming` 只随 Artifacts 提供，而 Artifacts 在使用 API key、Bedrock、Vertex、Foundry 或 `claude -p` 时都无法使用，两个 skill 也都可能被关闭；缺了其中一个时，页面会改用这个 skill 自己的备用规则来画，缺了 `dataviz` 时只用一组固定的颜色，并注明色板未经验证。
 
 布局检查和截图需要 Python 3.9 或更新版本，以及一个 Chromium 系的浏览器：Chrome、Edge、Chromium 或 Brave。没有浏览器时，只从页面的标记检查，skill 也会说明这一点。
-
-## 状态
-
-尚未经过 eval 验证。这个 skill 已经在真实和虚构的文档上运行过，页面检查也有已知答案的测试，但还没有 eval 证明其中每一条规则都会改变结果。

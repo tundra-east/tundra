@@ -2,7 +2,7 @@
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
 
-Turns a document, or several read together, into a local HTML page you can read instead of it: a figure wherever a passage has a shape, such as a flow, a set of states, a choice between options, numbers over time or a set of limits, and concise text for the rest that keeps every reason and condition, with the source's contradictions marked. It works on a plan, a spec, a design note, a ticket, a wiki page or a log.
+Turns a document, or several read together, into a local HTML page you can read in place of the source. Anything with a shape, such as a flow, a set of states, a choice between options, numbers over time or a set of limits, becomes a figure, and the rest becomes concise text that keeps every reason and condition, with the source's contradictions marked. It works on a plan, a spec, a design note, a ticket, a wiki page or a log.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/before-after-dark.png">
@@ -50,7 +50,3 @@ It writes one HTML file and never edits a source. The page names people, custome
 Claude Code v2.1.221 or later, for the `artifact-diagramming` and `dataviz` skills it draws with. `artifact-diagramming` comes only with Artifacts, which are not available with an API key, Bedrock, Vertex, Foundry or `claude -p`, and either skill can be turned off; without one the page is drawn by the skill's own fallback rules, and without `dataviz` it keeps to a fixed set of colours and says that the palette was not validated.
 
 Python 3.9 or later and a Chromium-family browser, Chrome, Edge, Chromium or Brave, for the layout checks and screenshots. Without a browser the page is checked from its markup alone, and the skill says so.
-
-## Status
-
-Not yet validated by evals. The skill has been run on real and fictional documents and its page checks have known-answer tests, but no eval yet shows that each rule in it changes the result.
