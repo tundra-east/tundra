@@ -17,7 +17,7 @@ flowchart TD
         EN --> CAL["Calibrate on its own pass:<br>plausibility × severity,<br>ground-truth by RUNNING build + tests,<br>drop what the evidence contradicts"]
         CAL --> RANK["Single ranked risk table"]
     end
-    S1 --> SC["Surface resolved scope<br>(anchor files vs caller partners)<br>— human may promote or drop;<br>the only gate before editing begins"]
+    S1 --> SC["State the resolved scope<br>(anchor files vs caller partners)<br>— information, not a gate"]
     SC --> EN
 
     RANK --> TIER{"Plausibility<br>tier?"}
