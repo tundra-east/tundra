@@ -41,11 +41,11 @@ def check(name, got, want):
 # ----- synthetic pages ---------------------------------------------------------
 
 # CJK punctuation spelt as escapes, so the source stays ASCII
-COMMA = "、"
-STOP = "。"
-OPEN = "（"
-CLOSE = "）"
-SECTION = "§"
+COMMA = "\u3001"
+STOP = "\u3002"
+OPEN = "\uff08"
+CLOSE = "\uff09"
+SECTION = "\u00a7"
 
 # the README addresses spelt out here rather than read from check_page,
 # so a typo in its constant fails the quiet cases
