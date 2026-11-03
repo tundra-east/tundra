@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 2f81cd4f04f3e41a10f52b6aa8e510ecf1335a53ba4e62a705ba31b52ac5428a; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 d3a6ad9cd7e72f6067d7002b17a5cb7a2a4214b8d5d1cc457f404cc60950a398; see the root CLAUDE.md "Translations" before editing -->
 # visualise-document
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
@@ -29,7 +29,7 @@
 - 要把幾份來源合成一頁，就說「合成一頁」
 - 要一併讀它連到的文件或某個 commit，就說「它連到的文件」，或指名那個 commit；否則來源提到的連結頁面、工單或 commit 會在頁面上列為未讀
 
-頁面放在本機文件旁邊，例如 `plan.md` 的頁面是 `plan.visual.html`。來源在遠端或是合成頁時，skill 會建議一個資料夾，由你確認。文件改了之後再執行一次，仍然成立的部分會保留，其餘重畫。
+頁面放在本機文件旁邊，例如 `plan.md` 的頁面是 `plan.visual.html`；同一份文件另一種語言的頁面放在它旁邊，例如 `plan.visual.zh-tw.html`。來源在遠端或是合成頁時，skill 會建議一個資料夾，由你確認。文件改了之後再執行一次，仍然成立的部分會保留，其餘重畫。
 
 ## 它讀什麼、送出什麼
 

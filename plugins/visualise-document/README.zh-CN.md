@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 2f81cd4f04f3e41a10f52b6aa8e510ecf1335a53ba4e62a705ba31b52ac5428a; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 d3a6ad9cd7e72f6067d7002b17a5cb7a2a4214b8d5d1cc457f404cc60950a398; see the root CLAUDE.md "Translations" before editing -->
 # visualise-document
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
@@ -29,7 +29,7 @@
 - 要把几份来源合成一页，就说“合成一页”
 - 要一并读它链接到的文档或某个 commit，就说“它链接到的文档”，或指明那个 commit；否则来源提到的链接页面、工单或 commit 会在页面上列为未读
 
-页面放在本地文档旁边，例如 `plan.md` 的页面是 `plan.visual.html`。来源在远程或是合成页时，skill 会建议一个文件夹，由你确认。文档改了之后再运行一次，仍然成立的部分会保留，其余重画。
+页面放在本地文档旁边，例如 `plan.md` 的页面是 `plan.visual.html`；同一份文档另一种语言的页面放在它旁边，例如 `plan.visual.zh-tw.html`。来源在远程或是合成页时，skill 会建议一个文件夹，由你确认。文档改了之后再运行一次，仍然成立的部分会保留，其余重画。
 
 ## 它读取什么、发送什么
 

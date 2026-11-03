@@ -28,7 +28,7 @@ Ask in your own words, such as "visualise this plan" with a file, or run `/visua
 - ask for several sources "as one page" to combine them
 - ask for "its linked documents", or name a commit, to have those read too; otherwise a linked page, ticket or commit the source mentions is listed on the page as not read
 
-The page is written beside a local document, such as `plan.visual.html` for `plan.md`. For a remote source or a combined page, the skill proposes a folder for you to confirm. Run it again after the document changes, and it keeps what still holds and redraws the rest.
+The page is written beside a local document, such as `plan.visual.html` for `plan.md`, and a page for the same document in another language beside that one, such as `plan.visual.zh-tw.html`. For a remote source or a combined page, the skill proposes a folder for you to confirm. Run it again after the document changes, and it keeps what still holds and redraws the rest.
 
 ## What it reads and what it sends
 
