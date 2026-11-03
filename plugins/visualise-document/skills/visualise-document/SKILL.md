@@ -64,7 +64,7 @@ Within each topic, decide passage by passage:
 
 The page shows the document's current state, not its history. Which passages are past is the document's call, never yours: what it marks as reversed, superseded, abandoned or archived is past, and everything else is current, whether or not you judge it still matters. A past passage appears only where a current one needs it — a reversed ruling as one line beside the ruling that reversed it, saying what it held and why it was reversed; an abandoned option as one line on why it was dropped. Leave archived sections out, and draw no figure of how a ruling changed over time.
 
-Do not stop to confirm the list. The person usually has not read the source either, so they cannot judge what belongs on the page before it exists. What they want added or removed they say after reading the page, and the next run takes it in (step 7).
+Do not stop to confirm the topics and figures. The person usually has not read the source either, so they cannot judge what belongs on the page before it exists. What they want added or removed they say after reading the page, and the next run takes it in (step 7).
 
 ## 5. Draw and write
 
@@ -128,7 +128,7 @@ For each figure and each section of text on the earlier page, decide whether it 
 - A figure that no longer holds is redrawn under the same id; text that no longer holds is rewritten.
 - A figure the source no longer supports is removed, and a claim that now needs one gets a new id. Both go into the report, along with whatever the person asked to add or remove after the last run.
 
-Then update the header and the embedded facts.
+Then update the header.
 
 ## 8. Check it against the sources
 
@@ -160,7 +160,7 @@ Read each image, fix what is wrong, and shoot again. A screenshot shows only the
 
 In the session, in the person's language:
 
-- the page's path, and each file written or changed, saying which are tracked by git — a page beside a tracked document shows up as a change the person may not expect;
+- the page's path, and whether git tracks it — a page beside a tracked document shows up as a change the person may not expect;
 - the topics, and under each the figures, one line each with the question it answers;
 - every contradiction, each with where its two sides are written, so the person can correct the source;
 - each passage left out and why, which should only ever be a repetition of another or past content (step 4);
