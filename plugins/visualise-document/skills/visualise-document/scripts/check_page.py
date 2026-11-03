@@ -3,7 +3,7 @@
 Two kinds of check run:
 - in the page's markup: element ids used twice (a second marker with the same id points every arrow at the first),
   a caption that ends in a gathered list of source identifiers instead of citing each sentence,
-  and a figure whose id shows nowhere outside its drawing;
+  a figure whose id shows nowhere outside its drawing, and a page with no link to the plugin's README in any of its languages;
 - in a headless Chromium-family browser at 1280 px: text cut off by its figure's edge, text running past the box it sits in,
   two labels drawn over each other, a page wider than the window, a column of text wider than TEXT_MAX_W,
   a box with a coloured solid border but no tint of colour behind it, and a box with a neutral solid border and no fill.
@@ -75,6 +75,10 @@ IDENT = r"(?=[^%s]*\d)[^%s]{1,12}" % (_NOT_IDENT, _NOT_IDENT)
 # an ASCII full stop ends a sentence only before a space, since it also sits inside identifiers such as 3.1
 GATHERED = re.compile(r"(?:^|[\u3002\uff01\uff1f)\uff09]|[.!?]\s)\s*(%s(?:\s*[\u3001,\uff0c;\uff1b]\s*%s)+)\s*[\u3002.]?\s*$" % (IDENT, IDENT))
 
+# the closing line links the plugin's name to its README in the page's language
+README_URL = "https://github.com/tundra-east/tundra/blob/main/plugins/visualise-document/README%s.md"
+README_URLS = tuple(README_URL % suffix for suffix in ("", ".zh-TW", ".zh-CN"))
+
 MEASURE_JS = r"""
 <script>
 addEventListener('load', () => {
@@ -126,12 +130,13 @@ addEventListener('load', () => {
 
 
 class _Markup(HTMLParser):
-    """Collects every element id with its count, the text of each figure caption with the figure it belongs to,
+    """Collects every element id with its count, every link's href, the text of each figure caption with the figure it belongs to,
     and each figure's text outside its drawings, in the order the figures open."""
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.ids = {}
+        self.hrefs = set()
         self.captions = []
         self.figure_text = []
         self._figure = []
@@ -142,6 +147,8 @@ class _Markup(HTMLParser):
         attrs = dict(attrs)
         if attrs.get("id"):
             self.ids[attrs["id"]] = self.ids.get(attrs["id"], 0) + 1
+        if tag == "a" and attrs.get("href"):
+            self.hrefs.add(attrs["href"].strip())
         if tag == "figure":
             self._figure.append(len(self.figure_text))
             self.figure_text.append((attrs.get("id") or "", []))
@@ -185,6 +192,9 @@ def markup_findings(text):
         # so the pieces are joined with a space: "fig-2" then "0.1.7 ..." is not "fig-20.1.7"
         if figure and not re.search(re.escape(figure) + r"(?![0-9])", " ".join(text)):
             found.append("%s does not show its id; open it with a label such as '%s' and a short title" % (figure, figure))
+    if not parser.hrefs & set(README_URLS):
+        found.append("the page does not link to the plugin's README; end it with the closing line, linking the plugin's name to %s"
+                     % " or ".join(README_URLS))
     return found
 
 

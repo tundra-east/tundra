@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 d4a8d3237d6c7c3b264bb27efba50bf0cf7793b4e6f751e749776770875b0301; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 2f81cd4f04f3e41a10f52b6aa8e510ecf1335a53ba4e62a705ba31b52ac5428a; see the root CLAUDE.md "Translations" before editing -->
 # visualise-document
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
@@ -46,7 +46,7 @@ flowchart TB
 
 它只读你指明的来源，其中读不到的内容，例如图片或附件，会列在页面上。远程的来源用 session 里能读取它的工具获取，例如连接到你的 wiki 或跟踪系统的 MCP server；没有工具读得到时，skill 会说明并停下。你的 session 所用的模型会读取来源，负责检查的 subagent 也会再读一次，所以来源的内容会发送到那个模型运行的地方，就和你请 Claude 读一个文件时一样。
 
-它只写一个 HTML 文件，从不修改来源。页面以角色称呼人、客户和账户，从不显示凭据，而且是独立的文件，只有在某张图用到脚本库时，才会从 CDN 加载。布局检查会在这台机器上用浏览器打开页面的副本。
+它只写一个 HTML 文件，从不修改来源。页面最后有一行说明本页由这个 plugin 生成，并链接到这份 README，让收到页面的人也找得到这个 plugin。页面以角色称呼人、客户和账户，从不显示凭据，而且是独立的文件，只有在某张图用到脚本库时，才会从 CDN 加载。布局检查会在这台机器上用浏览器打开页面的副本。
 
 ## 要求
 

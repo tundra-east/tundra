@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 d4a8d3237d6c7c3b264bb27efba50bf0cf7793b4e6f751e749776770875b0301; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 2f81cd4f04f3e41a10f52b6aa8e510ecf1335a53ba4e62a705ba31b52ac5428a; see the root CLAUDE.md "Translations" before editing -->
 # visualise-document
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
@@ -46,7 +46,7 @@ flowchart TB
 
 它只讀你指名的來源，其中讀不到的內容，例如圖片或附件，會列在頁面上。遠端的來源用 session 裡能讀取它的工具抓取，例如連到你的 wiki 或追蹤系統的 MCP server；沒有工具讀得到時，skill 會說明並停下。你的 session 所用的模型會讀取來源，負責檢查的 subagent 也會再讀一次，所以來源的內容會送到那個模型運作的地方，就和你請 Claude 讀一個檔案時一樣。
 
-它只寫一個 HTML 檔，從不修改來源。頁面以角色稱呼人、客戶和帳戶，從不顯示憑證，而且是獨立的檔案，只有在某張圖用到腳本函式庫時，才會從 CDN 載入。版面檢查會在這台機器上用瀏覽器開啟頁面的複本。
+它只寫一個 HTML 檔，從不修改來源。頁面最後有一行說明本頁由這個 plugin 產生，並連結到這份 README，讓收到頁面的人也找得到這個 plugin。頁面以角色稱呼人、客戶和帳戶，從不顯示憑證，而且是獨立的檔案，只有在某張圖用到腳本函式庫時，才會從 CDN 載入。版面檢查會在這台機器上用瀏覽器開啟頁面的複本。
 
 ## 需求
 

@@ -47,11 +47,22 @@ OPEN = "（"
 CLOSE = "）"
 SECTION = "§"
 
+# the README addresses spelt out here rather than read from check_page,
+# so a typo in its constant fails the quiet cases
+README_BASE = "https://github.com/tundra-east/tundra/blob/main/plugins/visualise-document/"
+README_EN = README_BASE + "README.md"
+README_ZH_TW = README_BASE + "README.zh-TW.md"
+README_ZH_CN = README_BASE + "README.zh-CN.md"
+
+# the closing line a finished page carries,
+# so the pages built for the other checks raise only the finding each one varies
+FOOTER = '<footer><a href="%s">visualise-document</a></footer>' % README_EN
+
 
 def _page(*captions, ids=("fig-1",)):
     figures = "".join('<figure id="%s"><svg></svg><figcaption>%s</figcaption></figure>' % (i, c)
                       for i, c in zip(ids, captions))
-    return "<html><head></head><body><main>%s</main></body></html>" % figures
+    return "<html><head></head><body><main>%s</main>%s</body></html>" % (figures, FOOTER)
 
 
 def _gathered(page):
@@ -66,8 +77,17 @@ def _unshown(page):
     return [f for f in check_page.markup_findings(page) if "does not show its id" in f]
 
 
+def _unlinked(page):
+    return [f for f in check_page.markup_findings(page) if "does not link to the plugin's README" in f]
+
+
+def _body(inner):
+    # a page holding only this, with no closing line unless inner is one
+    return "<html><head></head><body>%s</body></html>" % inner
+
+
 def _figure(inner, ident="fig-1"):
-    return '<html><head></head><body><main><figure id="%s">%s</figure></main></body></html>' % (ident, inner)
+    return '<html><head></head><body><main><figure id="%s">%s</figure></main>%s</body></html>' % (ident, inner, FOOTER)
 
 
 # ----- synthetic measurements ----------------------------------------------------
@@ -141,8 +161,8 @@ GREY_DEPTH = 255 - 136
 # a real executable that rejects the browser's flags, so it measures nothing and writes no screenshot
 NOT_A_BROWSER = sys.executable
 
-PLAIN = "<html><head></head><body></body></html>"
-DUPLICATED = '<html><head></head><body><i id="a"></i><i id="a"></i></body></html>'
+PLAIN = "<html><head></head><body>%s</body></html>" % FOOTER
+DUPLICATED = '<html><head></head><body><i id="a"></i><i id="a"></i>%s</body></html>' % FOOTER
 MEASURED = {"page": {"scrollWidth": 1264, "clientWidth": 1264, "scrollHeight": check_page.SHOT_HEIGHT}, "svgs": []}
 
 
@@ -289,6 +309,30 @@ def test_unshown_id_beside_other_checks():
           (len(_gathered(unshown)), len(_unshown(unshown)), len(check_page.markup_findings(unshown))), (1, 1, 2))
     duplicated = '<svg><defs><marker id="ah"></marker></defs></svg><svg><defs><marker id="ah"></marker></defs></svg>'
     check("the duplicate-id page has no figure, so no id finding", _unshown(duplicated), [])
+
+
+def test_readme_link_fires():
+    check("a page with no link at all", len(_unlinked(_body(""))), 1)
+    check("a link to another plugin's README",
+          len(_unlinked(_body('<a href="https://github.com/tundra-east/tundra/blob/main/plugins/whoami/README.md">whoami</a>'))), 1)
+    check("a link to the repository root",
+          len(_unlinked(_body('<a href="https://github.com/tundra-east/tundra">visualise-document</a>'))), 1)
+    check("a README in a language the plugin does not ship",
+          len(_unlinked(_body('<a href="%s">visualise-document</a>' % (README_BASE + "README.ja.md")))), 1)
+    check("the README address as plain text, not a link", len(_unlinked(_body("<p>%s</p>" % README_EN))), 1)
+    check("the README address on a link element, not an a", len(_unlinked(_body('<link href="%s">' % README_EN))), 1)
+    found = _unlinked(_body(""))
+    check("the finding opens with what is missing",
+          [f.startswith("the page does not link to the plugin's README") for f in found], [True])
+    check("the finding names all three README addresses",
+          [" or ".join((README_EN, README_ZH_TW, README_ZH_CN)) in f for f in found], [True])
+
+
+def test_readme_link_quiet():
+    check("the English README", _unlinked(_body('<a href="%s">visualise-document</a>' % README_EN)), [])
+    check("the Traditional Chinese README", _unlinked(_body('<a href="%s">visualise-document</a>' % README_ZH_TW)), [])
+    check("the Simplified Chinese README", _unlinked(_body('<a href="%s">visualise-document</a>' % README_ZH_CN)), [])
+    check("whitespace around the address", _unlinked(_body('<a href="  %s\n ">visualise-document</a>' % README_EN)), [])
 
 
 def test_clipped():

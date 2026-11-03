@@ -45,7 +45,7 @@ flowchart TB
 
 It reads only the sources you name, and lists on the page anything in them it could not read, such as an image or an attachment. A remote one is fetched with whatever tool the session has for it, such as an MCP server for your wiki or tracker; when none can reach it, the skill says so and stops. The model your session runs on reads the sources, and the checking subagent reads them again, so their content goes wherever that model runs, the same way a file does when you ask Claude to read it.
 
-It writes one HTML file and never edits a source. The page names people, customers and accounts by their role, never shows a credential, and is self-contained, apart from a script library it loads from a CDN when a figure uses one. The layout checks run a browser on this machine against a copy of the page.
+It writes one HTML file and never edits a source. The page ends with a line saying this plugin generated it, linked to this README, so anyone you pass it to can find the plugin. The page names people, customers and accounts by their role, never shows a credential, and is self-contained, apart from a script library it loads from a CDN when a figure uses one. The layout checks run a browser on this machine against a copy of the page.
 
 ## Requirements
 
