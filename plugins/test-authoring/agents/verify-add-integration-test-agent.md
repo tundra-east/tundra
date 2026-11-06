@@ -59,7 +59,7 @@ In addition to universal anti-gaming:
 
 ## Assertion quality review (non-deterministic, report only)
 
-In addition to the universal quality flags:
+Raise a quality flag for:
 
 - **Missing response-body verification** — the test asserts HTTP status code but does not verify the response body shape when a specific shape is contractually expected.
 - **Missing persisted-state verification** — the test exercises an endpoint that mutates state but does not verify the post-mutation state.

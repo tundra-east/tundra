@@ -55,7 +55,7 @@ The universal anti-gaming checks (skip attributes, commented-out tests, test cou
 
 ## Assertion quality review (non-deterministic, report only)
 
-In addition to the universal quality flags (trivially-true, too-broad, no-assertion-on-behaviour, redundant):
+Raise a quality flag for:
 
 - **Missing dependency interaction verification** — the test has mocked dependencies but never verifies they were called correctly. Flag as a quality concern.
 - **Over-mocked test** — every collaborator is mocked including value objects and simple data carriers. Flag as over-isolation — the test may no longer exercise real logic.
