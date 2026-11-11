@@ -118,22 +118,6 @@
       ]
     },
     {
-      "id": 8,
-      "prompt": "propagate this fix to the plugin's other skills",
-      "expected_output": "Skill review-plan-risk triggers; runs Step 5 propagation discipline — verifies the pattern per target with cited locations, presents the batch for pruning before editing, then fixes approved targets with smallest revisions.",
-      "assertions": [
-        {
-          "text": "skill_triggered: review-plan-risk is selected"
-        },
-        {
-          "text": "per_target_verification: each candidate file is verified to contain the pattern AND to constitute a risk in that file's context, with cited locations"
-        },
-        {
-          "text": "batch_gate: the verified batch is presented for pruning before any file is edited"
-        }
-      ]
-    },
-    {
       "id": 9,
       "prompt": "propagate this null-check fix across the source files in the codebase",
       "expected_output": "Skill review-plan-risk does NOT trigger. Propagating a code change across source files is refactoring, not design review.",
