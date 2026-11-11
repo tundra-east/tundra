@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 d3a6ad9cd7e72f6067d7002b17a5cb7a2a4214b8d5d1cc457f404cc60950a398; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 02776be9d467cfa6279b5c648ce21d8800c9ff0da54edef3ab2a322cb7cef933; see the root CLAUDE.md "Translations" before editing -->
 # visualise-document
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
@@ -37,19 +37,22 @@
 flowchart TB
     sources["你指明的来源<br>文件、链接、工单编号"] --> read
     linked["链接到的文档和 commit<br>只在你要求时读取"] -.-> read
-    read["session 的模型<br>读取来源并画出页面"] --> page["页面<br>一个 HTML 文件"]
+    read["session 的模型<br>读取来源并规划各主题"] --> forks["session 的 fork，每个主题一个<br>同时画出各主题"]
+    forks --> page["页面<br>一个 HTML 文件"]
     page --> verify["一个新的 subagent<br>对照来源检查页面"]
     page --> check["check_page.py，本地浏览器<br>测量布局并截图"]
     verify -- 检查结果 --> read
     check -- 检查结果 --> read
 ```
 
-它只读你指明的来源，其中读不到的内容，例如图片或附件，会列在页面上。远程的来源用 session 里能读取它的工具获取，例如连接到你的 wiki 或跟踪系统的 MCP server；没有工具读得到时，skill 会说明并停下。你的 session 所用的模型会读取来源，负责检查的 subagent 也会再读一次，所以来源的内容会发送到那个模型运行的地方，就和你请 Claude 读一个文件时一样。
+它只读你指明的来源，其中读不到的内容，例如图片或附件，会列在页面上。远程的来源用 session 里能读取它的工具获取，例如连接到你的 wiki 或跟踪系统的 MCP server；没有工具读得到时，skill 会说明并停下。你的 session 所用的模型会读取来源，它为了画各主题而启动的 fork 带着同一段对话，负责检查的 subagent 也会再读一次来源，所以来源的内容会发送到那个模型运行的地方，就和你请 Claude 读一个文件时一样。
 
 它只写一个 HTML 文件，从不修改来源。页面最后有一行说明本页由这个 plugin 生成，并链接到这份 README，让收到页面的人也找得到这个 plugin。页面以角色称呼人、客户和账户，从不显示凭据，而且是独立的文件，只有在某张图用到脚本库时，才会从 CDN 加载。布局检查会在这台机器上用浏览器打开页面的副本。
 
 ## 要求
 
 Claude Code v2.1.221 或更新版本，因为它画图时使用 `artifact-diagramming` 和 `dataviz` 这两个 skill。`artifact-diagramming` 只随 Artifacts 提供，而 Artifacts 在使用 API key、Bedrock、Vertex、Foundry 或 `claude -p` 时都无法使用，两个 skill 也都可能被关闭；缺了其中一个时，页面会改用这个 skill 自己的备用规则来画，缺了 `dataviz` 时只用一组固定的颜色，并注明色板未经验证。
+
+它用 session 的 fork 同时画各个主题，Claude Code 从 v2.1.302 起默认启用 fork。fork 被关闭时，例如设置了 `CLAUDE_CODE_FORK_SUBAGENT=0`，session 会一个主题接一个主题地画，所以耗时更长。fork 用的 token 比 session 自己画完所有主题多。
 
 布局检查和截图需要 Python 3.9 或更新版本，以及一个 Chromium 系的浏览器：Chrome、Edge、Chromium 或 Brave。没有浏览器时，只从页面的标记检查，skill 也会说明这一点。

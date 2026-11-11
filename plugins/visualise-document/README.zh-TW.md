@@ -1,4 +1,4 @@
-<!-- translated from README.md, source sha256 d3a6ad9cd7e72f6067d7002b17a5cb7a2a4214b8d5d1cc457f404cc60950a398; see the root CLAUDE.md "Translations" before editing -->
+<!-- translated from README.md, source sha256 02776be9d467cfa6279b5c648ce21d8800c9ff0da54edef3ab2a322cb7cef933; see the root CLAUDE.md "Translations" before editing -->
 # visualise-document
 
 [English](README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
@@ -37,19 +37,22 @@
 flowchart TB
     sources["你指名的來源<br>檔案、連結、工單編號"] --> read
     linked["連到的文件和 commit<br>只在你要求時讀取"] -.-> read
-    read["session 的模型<br>讀取來源並畫出頁面"] --> page["頁面<br>一個 HTML 檔"]
+    read["session 的模型<br>讀取來源並規劃各主題"] --> forks["session 的 fork，每個主題一個<br>同時畫出各主題"]
+    forks --> page["頁面<br>一個 HTML 檔"]
     page --> verify["一個新的 subagent<br>對照來源檢查頁面"]
     page --> check["check_page.py，本機瀏覽器<br>量測版面並截圖"]
     verify -- 檢查結果 --> read
     check -- 檢查結果 --> read
 ```
 
-它只讀你指名的來源，其中讀不到的內容，例如圖片或附件，會列在頁面上。遠端的來源用 session 裡能讀取它的工具抓取，例如連到你的 wiki 或追蹤系統的 MCP server；沒有工具讀得到時，skill 會說明並停下。你的 session 所用的模型會讀取來源，負責檢查的 subagent 也會再讀一次，所以來源的內容會送到那個模型運作的地方，就和你請 Claude 讀一個檔案時一樣。
+它只讀你指名的來源，其中讀不到的內容，例如圖片或附件，會列在頁面上。遠端的來源用 session 裡能讀取它的工具抓取，例如連到你的 wiki 或追蹤系統的 MCP server；沒有工具讀得到時，skill 會說明並停下。你的 session 所用的模型會讀取來源，它為了畫各主題而啟動的 fork 帶著同一段對話，負責檢查的 subagent 也會再讀一次來源，所以來源的內容會送到那個模型運作的地方，就和你請 Claude 讀一個檔案時一樣。
 
 它只寫一個 HTML 檔，從不修改來源。頁面最後有一行說明本頁由這個 plugin 產生，並連結到這份 README，讓收到頁面的人也找得到這個 plugin。頁面以角色稱呼人、客戶和帳戶，從不顯示憑證，而且是獨立的檔案，只有在某張圖用到腳本函式庫時，才會從 CDN 載入。版面檢查會在這台機器上用瀏覽器開啟頁面的複本。
 
 ## 需求
 
 Claude Code v2.1.221 或更新版本，因為它畫圖時使用 `artifact-diagramming` 和 `dataviz` 這兩個 skill。`artifact-diagramming` 只隨 Artifacts 提供，而 Artifacts 在使用 API key、Bedrock、Vertex、Foundry 或 `claude -p` 時都無法使用，兩個 skill 也都可能被關閉；少了其中一個時，頁面會改用這個 skill 自己的備援規則來畫，少了 `dataviz` 時只用一組固定的顏色，並註明色盤未經驗證。
+
+它用 session 的 fork 同時畫各個主題，Claude Code 從 v2.1.302 起預設啟用 fork。fork 被關閉時，例如設了 `CLAUDE_CODE_FORK_SUBAGENT=0`，session 會一個主題接一個主題地畫，所以比較久。fork 用的 token 比 session 自己畫完所有主題多。
 
 版面檢查和截圖需要 Python 3.9 或更新版本，以及一個 Chromium 系的瀏覽器：Chrome、Edge、Chromium 或 Brave。沒有瀏覽器時，只從頁面的標記檢查，skill 也會說明這一點。

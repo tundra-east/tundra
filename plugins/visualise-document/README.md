@@ -36,19 +36,22 @@ The page is written beside a local document, such as `plan.visual.html` for `pla
 flowchart TB
     sources["The sources you name<br>files, links, ticket keys"] --> read
     linked["Linked documents and commits<br>only when you ask"] -.-> read
-    read["The session's model<br>reads them and draws the page"] --> page["The page<br>one HTML file"]
+    read["The session's model<br>reads them and plans the topics"] --> forks["Forks of the session, one per topic<br>draw the topics at the same time"]
+    forks --> page["The page<br>one HTML file"]
     page --> verify["A fresh subagent<br>checks the page against the sources"]
     page --> check["check_page.py, local browser<br>measures the layout, takes screenshots"]
     verify -- findings --> read
     check -- findings --> read
 ```
 
-It reads only the sources you name, and lists on the page anything in them it could not read, such as an image or an attachment. A remote one is fetched with whatever tool the session has for it, such as an MCP server for your wiki or tracker; when none can reach it, the skill says so and stops. The model your session runs on reads the sources, and the checking subagent reads them again, so their content goes wherever that model runs, the same way a file does when you ask Claude to read it.
+It reads only the sources you name, and lists on the page anything in them it could not read, such as an image or an attachment. A remote one is fetched with whatever tool the session has for it, such as an MCP server for your wiki or tracker; when none can reach it, the skill says so and stops. The model your session runs on reads the sources, the forks it starts to draw the topics carry the same conversation, and the checking subagent reads the sources again, so their content goes wherever that model runs, the same way a file does when you ask Claude to read it.
 
 It writes one HTML file and never edits a source. The page ends with a line saying this plugin generated it, linked to this README, so anyone you pass it to can find the plugin. The page names people, customers and accounts by their role, never shows a credential, and is self-contained, apart from a script library it loads from a CDN when a figure uses one. The layout checks run a browser on this machine against a copy of the page.
 
 ## Requirements
 
 Claude Code v2.1.221 or later, for the `artifact-diagramming` and `dataviz` skills it draws with. `artifact-diagramming` comes only with Artifacts, which are not available with an API key, Bedrock, Vertex, Foundry or `claude -p`, and either skill can be turned off; without one the page is drawn by the skill's own fallback rules, and without `dataviz` it keeps to a fixed set of colours and says that the palette was not validated.
+
+It draws the topics at the same time with forks of the session, which Claude Code enables by default from v2.1.302. With forks turned off, such as with `CLAUDE_CODE_FORK_SUBAGENT=0`, the session draws the topics one after another, which takes longer. Forks use more tokens than the session drawing every topic itself.
 
 Python 3.9 or later and a Chromium-family browser, Chrome, Edge, Chromium or Brave, for the layout checks and screenshots. Without a browser the page is checked from its markup alone, and the skill says so.
