@@ -36,7 +36,7 @@ The page is written beside a local document, such as `plan.visual.html` for `pla
 flowchart TB
     sources["The sources you name<br>files, links, ticket keys"] --> read
     linked["Linked documents and commits<br>only when you ask"] -.-> read
-    read["The session's model<br>reads them and plans the topics"] --> forks["Forks of the session, one per topic<br>draw the topics at the same time"]
+    read["The session's model<br>reads them and plans the topics"] --> forks["Forks of the session, one per topic<br>draw a new page's topics at the same time"]
     forks --> page["The page<br>one HTML file"]
     page --> verify["A fresh subagent<br>checks the page against the sources"]
     page --> check["check_page.py, local browser<br>measures the layout, takes screenshots"]
@@ -52,6 +52,6 @@ It writes one HTML file and never edits a source. The page ends with a line sayi
 
 Claude Code v2.1.221 or later, for the `artifact-diagramming` and `dataviz` skills it draws with. `artifact-diagramming` comes only with Artifacts, which are not available with an API key, Bedrock, Vertex, Foundry or `claude -p`, and either skill can be turned off; without one the page is drawn by the skill's own fallback rules, and without `dataviz` it keeps to a fixed set of colours and says that the palette was not validated.
 
-It draws the topics at the same time with forks of the session, which Claude Code enables by default from v2.1.302. With forks turned off, such as with `CLAUDE_CODE_FORK_SUBAGENT=0`, the session draws the topics one after another, which takes longer. Forks use more tokens than the session drawing every topic itself.
+On a new page it draws the topics at the same time with forks of the session, which Claude Code enables by default from v2.1.302; a rerun updates the earlier page in place without them. With forks turned off, such as with `CLAUDE_CODE_FORK_SUBAGENT=0`, the session draws the topics one after another, which takes longer. Forks use more tokens than the session drawing every topic itself.
 
 Python 3.9 or later and a Chromium-family browser, Chrome, Edge, Chromium or Brave, for the layout checks and screenshots. Without a browser the page is checked from its markup alone, and the skill says so.
